@@ -15,8 +15,11 @@ class Network{
         this.operators.push(o);
     }
     expand(){
+        //assumes that network is alright, ok, and doin well
         for(let i = 0; i < this.operators.length; i++){
-
+            if(this.operators[i].func == 0 && this.operators[i].network){
+                
+            }
         }
     }
 }
