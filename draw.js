@@ -27,15 +27,6 @@ function init() {
     window.requestAnimationFrame(draw);
 }
 
-
-
-
-
-
-
-
-
-
 var seconds = 0;
 
 function draw() {
@@ -61,16 +52,19 @@ function draw() {
     ctx.beginPath()
     ctx.moveTo(20, 20)
     ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
-    ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
-    ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    // ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
+    // ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    ctx.fill()
     ctx.stroke();
 
     ctx.beginPath()
     ctx.moveTo(20, 20)
     ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
-    ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
-    ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    // ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
+    // ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+
     ctx.stroke();
+    ctx.fill();
 
     window.requestAnimationFrame(draw);
 }
