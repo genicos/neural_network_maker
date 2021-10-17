@@ -52,10 +52,25 @@ function draw() {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, width, height);
 
-
     ctx.fillStyle = "#000000"
     ctx.fillRect(10 + 10*seconds, 10, 10, 10)
 
+    width = 100
+
+    // Basic Bezier
+    ctx.beginPath()
+    ctx.moveTo(20, 20)
+    ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
+    ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
+    ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    ctx.stroke();
+
+    ctx.beginPath()
+    ctx.moveTo(20, 20)
+    ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
+    ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
+    ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    ctx.stroke();
 
     window.requestAnimationFrame(draw);
 }
