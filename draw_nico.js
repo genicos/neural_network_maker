@@ -58,7 +58,7 @@ function draw() {
     width = 100
 
     // Basic Bezier
-    /*
+    
     ctx.beginPath()
     ctx.moveTo(200, 20)
     ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
@@ -72,7 +72,7 @@ function draw() {
     ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
     ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
     ctx.stroke();
-    */
+    
 
     window.requestAnimationFrame(draw);
 }
