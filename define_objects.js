@@ -8,12 +8,23 @@ class Network{
         this.param_tensors = []
         this.output_tensors = []
     }
+    add_tensor(t){
+        this.tensors.push(t);
+    }
+    add_operator(o){
+        this.operators.push(o);
+    }
+    expand(){
+        for(let i = 0; i < this.operators.length; i++){
 
+        }
+    }
 }
 
 class Tensor{
     constructor() {
         this.scalar = false
+        this.ghost = true
 
         this.form = []
 
