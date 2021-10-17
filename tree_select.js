@@ -10,8 +10,9 @@ example_net.addNode(new Node())
 example_net.addNode(new Node())
 example_net.addNode(new Node())
 
+example_net.nodes[0].function = function_table[5];
 
 
 
-console.log(function_table[2].name)
+console.log(example_net.nodes[0].function.name)
 console.log("fuck")
