@@ -14,7 +14,8 @@ class Network{
     }
 
     add_node(n){
-
+        this.num_nodes += 1
+        this.nodes.push(n)
     }
 }
 
@@ -29,8 +30,6 @@ class Node{
         this.function = 0;
         this.x = 0;
         this.y = 0;
-
-
     }
 }
 

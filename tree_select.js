@@ -1,4 +1,4 @@
-example_net = new network()
+example_net = new Network()
 
 
 console.log(function_table[2].name)
