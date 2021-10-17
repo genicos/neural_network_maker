@@ -19,9 +19,9 @@ class Network{
 }
 
 class Node{
-    constructor(){
-        this.parent_1 = 0;
-        this.parent_2 = 0;
+    constructor() {
+        this.parent_1 = null;
+        this.parent_2 = null;
 
         this.num_children = 0;
         this.children = []

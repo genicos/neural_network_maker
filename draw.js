@@ -7,7 +7,8 @@ canvas.height = canvas.getBoundingClientRect().height
 var width = canvas.width;
 var height = canvas.height;
 
-var tensorRadius = 10
+var nodeRadius = 10
+var defaultFunctionLength = 50
 
 var mouseX = 0;
 var mouseY = 0;
@@ -31,19 +32,44 @@ function init() {
 
 var seconds = 0;
 
-function drawTensor(x, y) {
+function drawNode(x, y) {
     ctx.fillStyle = "white"
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'black'
 
     ctx.beginPath()
-    ctx.rect(x - tensorRadius, y - tensorRadius, 2 * tensorRadius, 2 * tensorRadius)
+    ctx.rect(x - nodeRadius, y - nodeRadius, 2 * nodeRadius, 2 * nodeRadius)
     ctx.fill()
     ctx.stroke()
 }
 
-function drawFull(node) {
+function drawFullFunction(network, nodeIndex) {
+    if (nodeIndex >= network.nodes.length) {
+        console.log("Invalid node index!")
+    }
 
+    var n = network.nodes[nodeIndex]
+
+    ctx.fillStyle = "blue"
+    ctx.beginPath()
+    ctx.moveTo(n.x - nodeRadius, n.y - nodeRadius)
+    ctx.lineTo(n.x - nodeRadius, n.y + nodeRadius)
+    // check if parents are null, other
+    if (n.parent_1 == null) {
+        ctx.lineTo(n.x - defaultFunctionLength, n.y + nodeRadius)
+        ctx.lineTo(n.x - defaultFunctionLength, n.y - nodeRadius)
+    }
+    else {
+
+    }
+
+    if (n.parent_2 == null) {
+        ctx.lineTo(n.x - defaultFunctionLength / 2 - nodeRadius, n.y + nodeRadius)
+        ctx.lineTo(n.x - defaultFunctionLength / 2 + nodeRadius, n.y + nodeRadius)
+    }
+    else {
+
+    }
 }
 
 function draw() {
@@ -96,7 +122,7 @@ function draw() {
     ctx.stroke();
     ctx.fill();
 
-    drawTensor(80, 80)
+    drawNode(80, 80)
 
     window.requestAnimationFrame(draw);
 }
