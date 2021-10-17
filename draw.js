@@ -17,7 +17,7 @@ var last_frame = Date.now()
 var this_frame = Date.now()
 
 var networkTest = new Network()
-networkTest.add_node(1)
+networkTest.addNode(new Node())
 networkTest.nodes[0].x = 100
 networkTest.nodes[0].y = 100
 
@@ -65,8 +65,8 @@ function drawFullFunction(network, nodeIndex) {
     ctx.lineTo(n.x - nodeRadius, n.y + nodeRadius)
     // check if parents are null, otherwise draw to parent1's right side
     if (n.parent_1 == null) {
-        ctx.lineTo(n.x - defaultFunctionLength, n.y + nodeRadius)
-        ctx.lineTo(n.x - defaultFunctionLength, n.y - nodeRadius)
+        ctx.lineTo(n.x - defaultFunctionLength - nodeRadius, n.y + nodeRadius)
+        ctx.lineTo(n.x - defaultFunctionLength - nodeRadius, n.y - nodeRadius)
     }
     else {
         ctx.lineTo(n.parent_1.x + nodeRadius, n.parent_1.y + nodeRadius)
@@ -74,8 +74,8 @@ function drawFullFunction(network, nodeIndex) {
     }
 
     if (n.parent_2 == null) {
-        ctx.lineTo(n.x - defaultFunctionLength / 2 - nodeRadius, n.y + nodeRadius)
-        ctx.lineTo(n.x - defaultFunctionLength / 2 + nodeRadius, n.y + nodeRadius)
+        ctx.lineTo(n.x - defaultFunctionLength / 2 - 2 * nodeRadius, n.y - defaultFunctionLength / 2)
+        ctx.lineTo(n.x - defaultFunctionLength / 2, n.y - defaultFunctionLength / 2)
     }
     else {
         ctx.lineTo(n.parent_2.x - nodeRadius, n.parent_2.y + nodeRadius)
@@ -136,8 +136,8 @@ function draw() {
     ctx.stroke();
     ctx.fill();
 
-    drawNode(networkTest.nodes[0].x, networkTest.nodes[0].y)
     drawFullFunction(networkTest, 0)
+    drawNode(networkTest.nodes[0].x, networkTest.nodes[0].y)
 
     window.requestAnimationFrame(draw);
 }
