@@ -42,6 +42,9 @@ function drawTensor(x, y) {
     ctx.stroke()
 }
 
+function drawFull(node) {
+
+}
 
 function draw() {
     canvas.width = canvas.getBoundingClientRect().width
