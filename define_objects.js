@@ -13,7 +13,7 @@ class Network{
         this.y = 0;
     }
 
-    add_node(n){
+    add_Node(n){
         this.num_nodes += 1
         this.nodes.push(n)
     }
@@ -27,7 +27,7 @@ class Node{
         this.num_children = 0;
         this.children = []
 
-        this.function = 0;
+        this.function = null;
         this.x = 0;
         this.y = 0;
     }
