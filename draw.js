@@ -1,5 +1,7 @@
-var canvas = document.getElementById("network_creator");
-canvas.addEventListener("mousedown", doMouseDown, false);
+var canvas = document.getElementById("network_creator")
+canvas.addEventListener("mousedown", doMouseDown, false)
+canvas.addEventListener("mousemove", doMouseMove, false)
+canvas.addEventListener("mouseup", doMouseUp, false)
 var ctx = canvas.getContext("2d");
 
 canvas.width = canvas.getBoundingClientRect().width
@@ -10,18 +12,33 @@ var height = canvas.height;
 var nodeRadius = 10
 var defaultFunctionLength = 50
 
+var down = false;
+
 var mouseX = 0;
 var mouseY = 0;
 
 var last_frame = Date.now()
 var this_frame = Date.now()
 
-var networkTest = new Network()
-networkTest.addNode(new Node())
-networkTest.nodes[0].x = 100
-networkTest.nodes[0].y = 100
+var networks = []
 
-console.log(networkTest.nodes[0].x)
+networks.push(new Network())
+networks[0].addNode(new Node())
+networks[0].nodes[0].x = 200
+networks[0].nodes[0].y = 200
+
+networks[0].addNode(new Node())
+networks[0].nodes[1].x = 100
+networks[0].nodes[1].y = 200
+
+networks[0].addNode(new Node())
+networks[0].nodes[2].x = 150
+networks[0].nodes[2].y = 150
+
+networks[0].nodes[0].parent_1 = 1
+networks[0].nodes[0].parent_2 = 2
+
+console.log(networks[0].nodes[0].x)
 
 function init() {
     last_frame = Date.now()
@@ -59,7 +76,11 @@ function drawFullFunction(network, nodeIndex) {
 
     var n = network.nodes[nodeIndex]
 
-    ctx.fillStyle = "blue"
+    var functionGradient = ctx.createLinearGradient(n.x, n.y, n.x, n.y - defaultFunctionLength / 2)
+    functionGradient.addColorStop(0, "#4D8DB2")
+    functionGradient.addColorStop(1, "#4D5BB2")
+
+    ctx.fillStyle = functionGradient
     ctx.beginPath()
     ctx.moveTo(n.x - nodeRadius, n.y - nodeRadius)
     ctx.lineTo(n.x - nodeRadius, n.y + nodeRadius)
@@ -69,8 +90,10 @@ function drawFullFunction(network, nodeIndex) {
         ctx.lineTo(n.x - defaultFunctionLength - nodeRadius, n.y - nodeRadius)
     }
     else {
-        ctx.lineTo(n.parent_1.x + nodeRadius, n.parent_1.y + nodeRadius)
-        ctx.lineTo(n.parent_1.x + nodeRadius, n.parent_1.y - nodeRadius)
+        let p = network.nodes[n.parent_1]
+
+        ctx.lineTo(p.x + nodeRadius, p.y + nodeRadius)
+        ctx.lineTo(p.x + nodeRadius, p.y - nodeRadius)
     }
 
     if (n.parent_2 == null) {
@@ -78,8 +101,10 @@ function drawFullFunction(network, nodeIndex) {
         ctx.lineTo(n.x - defaultFunctionLength / 2, n.y - defaultFunctionLength / 2)
     }
     else {
-        ctx.lineTo(n.parent_2.x - nodeRadius, n.parent_2.y + nodeRadius)
-        ctx.lineTo(n.parent_2.x + nodeRadius, n.parent_2.y + nodeRadius)
+        let p = network.nodes[n.parent_2]
+
+        ctx.lineTo(p.x - nodeRadius, p.y + nodeRadius)
+        ctx.lineTo(p.x + nodeRadius, p.y + nodeRadius)
     }
 
     ctx.closePath()
@@ -118,6 +143,7 @@ function draw() {
 
     width = 100
 
+    /*
     // Basic Bezier
     ctx.beginPath()
     ctx.moveTo(20, 20)
@@ -132,23 +158,36 @@ function draw() {
     ctx.bezierCurveTo(width, 20, width, 60, 20, 60)
     // ctx.bezierCurveTo(20, 120, 20, 120, 20, 120)
     // ctx.bezierCurveTo(20, 20, 20, 20, 20, 20)
+    */
 
     ctx.stroke();
     ctx.fill();
 
-    drawFullFunction(networkTest, 0)
-    drawNode(networkTest.nodes[0].x, networkTest.nodes[0].y)
+    drawFullFunction(networks[0], 0)
+
+    for (let i = 0; i < networks[0].nodes.length; i++) {
+        drawNode(networks[0].nodes[i].x, networks[0].nodes[i].y)
+    }
 
     window.requestAnimationFrame(draw);
 }
 
-function doMouseDown(e){
+function doMouseDown(e) {
+    down = true
+    console.log(down)
+}
 
-    if(e.offsetX) {
+function doMouseUp(e) {
+    down = false
+    console.log(down)
+}
+
+function doMouseMove(e) {
+    if (e.offsetX) {
         mouseX = e.offsetX;
         mouseY = e.offsetY;
     }
-    else if(e.layerX) {
+    else if (e.layerX) {
         mouseX = e.layerX;
         mouseY = e.layerY;
     }
