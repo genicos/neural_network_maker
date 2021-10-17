@@ -69,11 +69,41 @@ function drawNode(x, y) {
 
 // here we draw the function naively without checking for tensor positions. That must be handled 
 // by movement logic
-function drawFullFunction(network, nodeIndex) {
-    if (nodeIndex >= network.nodes.length) {
-        console.log("Invalid node index!")
-    }
 
+function drawOperator(operator) {
+
+    switch (operator.func) {
+        case 0: // abstraction
+            break
+        case 1: // identity
+            break
+        case 2: // add
+            break
+        case 3: // subtract
+            break
+        case 4: // scale
+            break
+        case 5: // full
+            break
+        case 6: // amass
+            break
+        case 7: // softmax
+            break
+        case 8: // hardmax
+            break
+        case 9: // max
+            break
+        case 10: // convolution
+            break
+        case 11: // squared dist
+            break
+        default:
+            console.log("Invalid operator types")
+            break
+    }
+}
+
+function drawFullFunction(network, nodeIndex) {
     var n = network.nodes[nodeIndex]
 
     var functionGradient = ctx.createLinearGradient(n.x, n.y, n.x, n.y - defaultFunctionLength / 2)
