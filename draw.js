@@ -12,7 +12,9 @@ var height = canvas.height;
 var tensorRadius = 10
 var defaultFunctionLength = 50
 
-var down = false;
+var down = false
+var draggedIndex = -1
+var tensorGrabbed = false
 
 var mouseX = 0;
 var mouseY = 0;
@@ -21,6 +23,7 @@ var last_frame = Date.now()
 var this_frame = Date.now()
 
 var networks = []
+var networkIndex = 0
 
 networks.push(new Network())
 networks[0].add_tensor(new Tensor())
@@ -92,7 +95,6 @@ function drawOperator(network, operatorIndex) {
         case 4: // scale
             break
         case 5: // full
-            console.log("full")
             let input1 = network.tensors[o.inputs[0]]
             let input2 = network.tensors[o.inputs[1]]
             let output = network.tensors[o.outputs[0]]
@@ -152,24 +154,29 @@ function draw() {
 
 function doMouseDown(e) {
     down = true
-    console.log(down)
+    // console.log("Mouse position: ",mouseX," ", mouseY)
 
     for (let i = 0; i < networks.length; i++) {
         for (let j = 0; j < networks[0].tensors.length; j++) {
-            if (networks[i].x + networks[i].tensors[j].x - tensorRadius < mouseX && 
-                networks[i].x + networks[i].tensors[j].x + tensorRadius > mouseX && 
-                networks[i].y + networks[i].tensors[j].y - tensorRadius < mouseY &&
-                networks[i].y + networks[i].tensors[j].y + tensorRadius > mouseY ) {
-
+            if (networks[i].tensors[j].x - tensorRadius < mouseX &&
+                networks[i].tensors[j].x + tensorRadius > mouseX &&
+                networks[i].tensors[j].y - tensorRadius < mouseY &&
+                networks[i].tensors[j].y + tensorRadius > mouseY) {
+                console.log("In tensor ", j)
+                draggedIndex = j
+                tensorGrabbed = true
+                break
             }
-            
+            else {
+                console.log("Outside of tensor")
+            }
         }
     }
 }
 
 function doMouseUp(e) {
     down = false
-    console.log(down)
+    draggedIndex = -1
 }
 
 function doMouseMove(e) {
@@ -180,6 +187,18 @@ function doMouseMove(e) {
     else if (e.layerX) {
         mouseX = e.layerX;
         mouseY = e.layerY;
+    }
+
+    // drag and drop
+    if (draggedIndex != -1) {
+        if (tensorGrabbed) {
+            networks[networkIndex].tensors[draggedIndex].x = mouseX
+            networks[networkIndex].tensors[draggedIndex].y = mouseY
+        }
+        else {
+            networks[networkIndex].operators[draggedIndex].x = mouseX
+            networks[networkIndex].operators[draggedIndex].y = mouseY
+        }
     }
 }
 
