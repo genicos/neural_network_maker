@@ -16,6 +16,13 @@ var mouseY = 0;
 var last_frame = Date.now()
 var this_frame = Date.now()
 
+var networkTest = new Network()
+networkTest.add_node(1)
+networkTest.nodes[0].x = 100
+networkTest.nodes[0].y = 100
+
+console.log(networkTest.nodes[0].x)
+
 function init() {
     last_frame = Date.now()
     this_frame = Date.now()
@@ -43,6 +50,8 @@ function drawNode(x, y) {
     ctx.stroke()
 }
 
+// here we draw the function naively without checking for tensor positions. That must be handled 
+// by movement logic
 function drawFullFunction(network, nodeIndex) {
     if (nodeIndex >= network.nodes.length) {
         console.log("Invalid node index!")
@@ -54,13 +63,14 @@ function drawFullFunction(network, nodeIndex) {
     ctx.beginPath()
     ctx.moveTo(n.x - nodeRadius, n.y - nodeRadius)
     ctx.lineTo(n.x - nodeRadius, n.y + nodeRadius)
-    // check if parents are null, other
+    // check if parents are null, otherwise draw to parent1's right side
     if (n.parent_1 == null) {
         ctx.lineTo(n.x - defaultFunctionLength, n.y + nodeRadius)
         ctx.lineTo(n.x - defaultFunctionLength, n.y - nodeRadius)
     }
     else {
-
+        ctx.lineTo(n.parent_1.x + nodeRadius, n.parent_1.y + nodeRadius)
+        ctx.lineTo(n.parent_1.x + nodeRadius, n.parent_1.y - nodeRadius)
     }
 
     if (n.parent_2 == null) {
@@ -68,8 +78,12 @@ function drawFullFunction(network, nodeIndex) {
         ctx.lineTo(n.x - defaultFunctionLength / 2 + nodeRadius, n.y + nodeRadius)
     }
     else {
-
+        ctx.lineTo(n.parent_2.x - nodeRadius, n.parent_2.y + nodeRadius)
+        ctx.lineTo(n.parent_2.x + nodeRadius, n.parent_2.y + nodeRadius)
     }
+
+    ctx.closePath()
+    ctx.fill()
 }
 
 function draw() {
@@ -122,7 +136,8 @@ function draw() {
     ctx.stroke();
     ctx.fill();
 
-    drawNode(80, 80)
+    drawNode(networkTest.nodes[0].x, networkTest.nodes[0].y)
+    drawFullFunction(networkTest, 0)
 
     window.requestAnimationFrame(draw);
 }
