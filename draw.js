@@ -7,6 +7,8 @@ canvas.height = canvas.getBoundingClientRect().height
 var width = canvas.width;
 var height = canvas.height;
 
+var tensorRadius = 10
+
 var mouseX = 0;
 var mouseY = 0;
 
@@ -29,11 +31,37 @@ function init() {
 
 var seconds = 0;
 
+function drawTensor(x, y) {
+    ctx.fillStyle = "white"
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = 'black'
+
+    ctx.beginPath()
+    ctx.rect(x - tensorRadius, y - tensorRadius, 2 * tensorRadius, 2 * tensorRadius)
+    ctx.fill()
+    ctx.stroke()
+}
+
+function 
+
 function draw() {
     canvas.width = canvas.getBoundingClientRect().width
     canvas.height = canvas.getBoundingClientRect().height
-    width = canvas.width;
-    height = canvas.height;
+    width = canvas.width
+    height = canvas.height
+
+
+    // Stroke on top of fill
+    ctx.beginPath();
+    ctx.rect(25, 25, 100, 100);
+    ctx.fill();
+    ctx.stroke();
+
+    // Fill on top of stroke
+    ctx.beginPath();
+    ctx.rect(175, 25, 100, 100);
+    ctx.stroke();
+    ctx.fill();
 
     last_frame = this_frame
     this_frame = Date.now()
@@ -66,10 +94,10 @@ function draw() {
     ctx.stroke();
     ctx.fill();
 
+    drawTensor(80, 80)
+
     window.requestAnimationFrame(draw);
 }
-
-
 
 function doMouseDown(e){
 
