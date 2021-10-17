@@ -175,6 +175,18 @@ function draw() {
 function doMouseDown(e) {
     down = true
     console.log(down)
+
+    for (let i = 0; i < networks.length; i++) {
+        for (let j = 0; j < networks[0].nodes.length; j++) {
+            if (networks[i].x + networks[i].nodes[j].x - nodeRadius < mouseX && 
+                networks[i].x + networks[i].nodes[j].x + nodeRadius > mouseX && 
+                networks[i].y + networks[i].nodes[j].y - nodeRadius < mouseY &&
+                networks[i].y + networks[i].nodes[j].y + nodeRadius > mouseY ) {
+
+            }
+            
+        }
+    }
 }
 
 function doMouseUp(e) {
