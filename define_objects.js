@@ -13,7 +13,7 @@ class Network{
         this.y = 0;
     }
 
-    add_Node(n){
+    addNode(n){
         this.num_nodes += 1
         this.nodes.push(n)
     }
