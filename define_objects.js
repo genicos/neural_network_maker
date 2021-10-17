@@ -7,7 +7,6 @@ class Network{
         this.input_nodes = []
         this.param_nodes = []
         this.output_nodes = []
-        this.inner_nodes = []
 
         this.x = 0;
         this.y = 0;
