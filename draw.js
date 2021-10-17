@@ -23,7 +23,7 @@ var this_frame = Date.now()
 var networks = []
 
 networks.push(new Network())
-networks[0].addNode(new Node())
+networks[0].addTensor(new Tensor())
 networks[0].nodes[0].x = 200
 networks[0].nodes[0].y = 200
 
@@ -56,13 +56,15 @@ function init() {
 
 var seconds = 0;
 
-function drawNode(x, y) {
+function drawTensor(network, tensorIndex) {
     ctx.fillStyle = "white"
     ctx.lineWidth = 1;
     ctx.strokeStyle = 'black'
 
+    let t = network.tensors[tensorIndex]
+
     ctx.beginPath()
-    ctx.rect(x - nodeRadius, y - nodeRadius, 2 * nodeRadius, 2 * nodeRadius)
+    ctx.rect(t.x - nodeRadius, t.y - nodeRadius, 2 * nodeRadius, 2 * nodeRadius)
     ctx.fill()
     ctx.stroke()
 }
@@ -70,7 +72,11 @@ function drawNode(x, y) {
 // here we draw the function naively without checking for tensor positions. That must be handled 
 // by movement logic
 
-function drawOperator(operator) {
+function drawOperator(network, operatorIndex) {
+
+    var functionGradient = ctx.createLinearGradient(n.x, n.y, n.x, n.y - defaultFunctionLength / 2)
+    functionGradient.addColorStop(0, "#4D8DB2")
+    functionGradient.addColorStop(1, "#4D5BB2")
 
     switch (operator.func) {
         case 0: // abstraction
@@ -84,6 +90,23 @@ function drawOperator(operator) {
         case 4: // scale
             break
         case 5: // full
+            let input1 = network.tensors[network.operators[operatorIndex].inputs[0]]
+            let input2 = network.tensors[network.operators[operatorIndex].inputs[1]]
+            let output = network.tensors[network.operators[operatorIndex].outputs[0]]
+
+            ctx.fillStyle = functionGradient
+            ctx.beginPath()
+            ctx.moveTo(output.x - nodeRadius, output.y - nodeRadius)
+            ctx.lineTo(output.x - nodeRadius, output.y + nodeRadius)
+
+            ctx.lineTo(input1.x + nodeRadius, input1.y + nodeRadius)
+            ctx.lineTo(input1.x + nodeRadius, input1.y - nodeRadius)
+
+            ctx.lineTo(input2.x - nodeRadius, input2.y + nodeRadius)
+            ctx.lineTo(input2.x + nodeRadius, input2.y + nodeRadius)
+           
+            ctx.closePath()
+            ctx.fill()
             break
         case 6: // amass
             break
@@ -103,50 +126,11 @@ function drawOperator(operator) {
     }
 }
 
-function drawFullFunction(network, nodeIndex) {
-    var n = network.nodes[nodeIndex]
-
-    var functionGradient = ctx.createLinearGradient(n.x, n.y, n.x, n.y - defaultFunctionLength / 2)
-    functionGradient.addColorStop(0, "#4D8DB2")
-    functionGradient.addColorStop(1, "#4D5BB2")
-
-    ctx.fillStyle = functionGradient
-    ctx.beginPath()
-    ctx.moveTo(n.x - nodeRadius, n.y - nodeRadius)
-    ctx.lineTo(n.x - nodeRadius, n.y + nodeRadius)
-    // check if parents are null, otherwise draw to parent1's right side
-    if (n.parent_1 == null) {
-        ctx.lineTo(n.x - defaultFunctionLength - nodeRadius, n.y + nodeRadius)
-        ctx.lineTo(n.x - defaultFunctionLength - nodeRadius, n.y - nodeRadius)
-    }
-    else {
-        let p = network.nodes[n.parent_1]
-
-        ctx.lineTo(p.x + nodeRadius, p.y + nodeRadius)
-        ctx.lineTo(p.x + nodeRadius, p.y - nodeRadius)
-    }
-
-    if (n.parent_2 == null) {
-        ctx.lineTo(n.x - defaultFunctionLength / 2 - 2 * nodeRadius, n.y - defaultFunctionLength / 2)
-        ctx.lineTo(n.x - defaultFunctionLength / 2, n.y - defaultFunctionLength / 2)
-    }
-    else {
-        let p = network.nodes[n.parent_2]
-
-        ctx.lineTo(p.x - nodeRadius, p.y + nodeRadius)
-        ctx.lineTo(p.x + nodeRadius, p.y + nodeRadius)
-    }
-
-    ctx.closePath()
-    ctx.fill()
-}
-
 function draw() {
     canvas.width = canvas.getBoundingClientRect().width
     canvas.height = canvas.getBoundingClientRect().height
     width = canvas.width
     height = canvas.height
-
 
     // Stroke on top of fill
     ctx.beginPath();
@@ -195,8 +179,8 @@ function draw() {
 
     drawFullFunction(networks[0], 0)
 
-    for (let i = 0; i < networks[0].nodes.length; i++) {
-        drawNode(networks[0].nodes[i].x, networks[0].nodes[i].y)
+    for (let i = 0; i < networks[0].tensors.length; i++) {
+        drawTensor(networks[0], i)
     }
 
     window.requestAnimationFrame(draw);
