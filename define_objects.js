@@ -12,6 +12,12 @@ class Network{
         this.tensors.push(t);
     }
     add_operator(o){
+        for(let i = 0; i < o.inputs.length; i++){
+            this.tensors[o.inputs[i]].input_to.push(this.operators.length)
+        }
+        for(let i = 0; i < o.outputs.length; i++){
+            this.tensors[o.outputs[i]].output_of.push(this.operators.length)
+        }
         this.operators.push(o);
     }
     expand(){
@@ -66,6 +72,9 @@ class Tensor{
 
         this.x = 0;
         this.y = 0;
+
+        this.input_to = []
+        this.output_of = null;
     }
 }
 
