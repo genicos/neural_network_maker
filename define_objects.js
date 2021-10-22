@@ -95,23 +95,100 @@ class Operator{
 
 
 class Func{
-    constructor(name){
+    constructor(name, num_inputs){
         this.name = name
+        this.num_inputs = num_inputs
+    }
+    //takes array of tensors, 
+    //returns array of output forms
+    calc_form(inputs){
+        var out = []
+
+        switch(this.name){
+            case "identity":
+                out.push(inputs[0].form)
+                break
+            case "add":
+                out.push(inputs[0].form)
+                break
+            case "subtract":
+                out.push(inputs[0].form)
+                break   
+            case "scale":
+                out.push(inputs[0].form)
+                break
+            case "full":
+                form1 = inputs[0].form
+                form2 = inputs[1].form
+
+                form1_total = 1
+                for(let i = 0; i < form1.length; i++){
+                    form1_total *= form1[i]
+                }
+                form2_total = 1
+                for(let i = 0; i < form2.length; i++){
+                    form2_total *= form2[i]
+                }
+
+                var out_form = []
+                out_form.push(form2_total/form1_total)
+                
+                out.push(out_form)
+                break
+            case "amass":
+                var out_form = []
+                out_form.push(1)
+                
+                out.push(out_form)
+                break
+            case "softmax":
+                out.push(inputs[0].form)
+                break
+            case "hardmax":
+                out.push(inputs[0].form)
+                break
+            case "max":
+                var out_form = []
+                out_form.push(1)
+                
+                out.push(out_form)
+                break
+            case "full":
+                form1 = inputs[0].form
+                form2 = inputs[1].form
+                var out_form = []
+
+                
+                for(let i = 0; i < form1.length; i++){
+                    if(form2.length <= i){
+                        out_form.push(form1[i])
+                    }else{
+                        out_form.push(form1[i] - form2[i] + 1)
+                    }
+                }
+                
+                out.push(out_form)
+                break
+                
+
+        }
+
+        return out
     }
 }
 
 var function_table = Array.apply(null, Array(12)).map(function () {})
 
-function_table[0] = new Func("abstraction")
-function_table[1] = new Func("identity")
-function_table[2] = new Func("add")
-function_table[3] = new Func("subtract")
-function_table[4] = new Func("scale")
-function_table[5] = new Func("full")
-function_table[6] = new Func("amass")
-function_table[7] = new Func("softmax")
-function_table[8] = new Func("hardmax")
-function_table[9] = new Func("max")
-function_table[10] = new Func("convolution")
-function_table[11] = new Func("squared dist")
+function_table[0] = new Func("abstraction", 0)
+function_table[1] = new Func("identity", 1)
+function_table[2] = new Func("add", 2)
+function_table[3] = new Func("subtract", 2)
+function_table[4] = new Func("scale", 2)
+function_table[5] = new Func("full", 2)
+function_table[6] = new Func("amass", 1)
+function_table[7] = new Func("softmax", 1)
+function_table[8] = new Func("hardmax", 1)
+function_table[9] = new Func("max", 1)
+function_table[10] = new Func("convolution", 2)
+function_table[11] = new Func("squared dist", 2)
 
