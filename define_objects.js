@@ -12,17 +12,20 @@ class Network{
         this.tensors.push(t);
     }
     add_operator(o){
+        o = o.clone()
+
+        this.operators.push(o); 
+
         for(let i = 0; i < o.inputs.length; i++){
-            this.tensors[o.inputs[i]].input_to.push(this.operators.length)
+            this.tensors[o.inputs[i]].input_to.push(this.operators.length - 1)
         }
         for(let i = 0; i < o.outputs.length; i++){
-            this.tensors[o.outputs[i]].output_of.push(this.operators.length)
+            this.tensors[o.outputs[i]].output_of.push(this.operators.length - 1)
         }
-        this.operators.push(o);
     }
     expand(){
         //assumes that network is alright, ok, and doin well
-        //inner networks should never have parameter nodes
+        //inner networks should never have parameter nodes (ok actually they should, but hold on, please just let me sleep)
         for(let i = 0; i < this.operators.length; i++){
             if(this.operators[i].func == 0 && this.operators[i].network){
                 var inner_net = this.operators[i].network;
@@ -61,12 +64,61 @@ class Network{
             }
         }
     }
+
+    to_string(){
+        var str = ""
+
+        str += "Tensors: \n"
+        for(let i = 0; i < this.tensors.length; i++){
+            str += "\t"+i+":\n"
+
+            str += "\t\tinput_to:\n"
+            for(let k = 0; k < this.tensors[i].input_to; k++){
+                str += "\t\t\t" + this.tensors[i].input_to[k] + "\n"
+            }
+
+            str += "\t\toutput_of\n"
+            str += "\t\t\t"+this.tensors[i].output_of
+        }
+
+        str += "Operators: \n"
+        for(let i = 0; i < this.operators.length; i++){
+            str += "\t"+i+":\n"
+
+            str += "\t\tinputs:\n"
+            for(let k = 0; k < this.operators[i].inputs.length; k++){
+                str += "\t\t\t" + this.operators[i].inputs[k] + "\n"
+            }
+
+            str += "\t\toutputs:\n"
+            for(let k = 0; k < this.operators[i].outputs.length; k++){
+                str += "\t\t\t" + this.operators[i].outputs[k] + "\n"
+            }
+
+            str += "\t\tfunc: "+this.operators[i].func
+        }
+
+        str += "input_tensors:\n"
+        for(let i = 0; i < this.input_tensors.length; i++){
+            str += "\t"+this.input_tensors[i]+"\n"
+        }
+
+        str += "param_tensors:\n"
+        for(let i = 0; i < this.param_tensors.length; i++){
+            str += "\t"+this.param_tensors[i]+"\n"
+        }
+        
+        str += "output_tensors:\n"
+        for(let i = 0; i < this.output_tensors.length; i++){
+            str += "\t"+this.output_tensors[i]+"\n"
+        }
+    }
 }
 
 class Tensor{
-    constructor() {
+    constructor(notghost) {
         this.scalar = false
-        this.ghost = true
+        this.ghost = !notghost
 
         this.form = []
 
@@ -79,12 +131,19 @@ class Tensor{
 }
 
 class Operator{
-    constructor(){
+    constructor(func){
         this.inputs = []
         this.outputs = []
 
-        this.func = 0
+        this.func = func
         this.network = null
+    }
+    clone(){
+        var clone = new Operator(this.func)
+        clone.inputs = [...this.inputs]
+        clone.outputs = [...this.outputs]
+        clone.network = this.network
+        return clone
     }
 }
 
@@ -191,4 +250,3 @@ function_table[8] = new Func("hardmax", 1)
 function_table[9] = new Func("max", 1)
 function_table[10] = new Func("convolution", 2)
 function_table[11] = new Func("squared dist", 2)
-

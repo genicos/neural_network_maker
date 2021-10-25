@@ -1,42 +1,107 @@
-example_net = new Network()
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
-example_net.add_tensor(new Tensor())
+console.log("Network expand test\n")
 
-example_net.add_operator(new Operator())
-example_net.add_operator(new Operator())
-example_net.add_operator(new Operator())
-example_net.add_operator(new Operator())
-example_net.add_operator(new Operator())
+var classifyer = new Network()
 
-example_net.operators[0].func = 7
-example_net.operators[0].outputs.push(0)
-example_net.operators[0].inputs.push(1)
+classifyer.add_tensor(new Tensor(true))
+classifyer.add_tensor(new Tensor(true))
+classifyer.add_tensor(new Tensor(true))
+classifyer.add_tensor(new Tensor(true))
 
-example_net.operators[1].func = 5
-example_net.operators[1].outputs.push(2)
-example_net.operators[1].inputs.push(3)
+var op = new Operator(5)
+op.inputs = [0,1]
+op.outputs = [2]
+classifyer.add_operator(op)
 
-example_net.operators[2].func = 5
-example_net.operators[2].outputs.push(4)
-example_net.operators[2].inputs.push(5)
+op = new Operator(7)
+op.inputs = [2]
+op.outpus = [3]
+classifyer.add_operator(op)
 
-example_net.operators[3].func = 10
-example_net.operators[3].outputs.push(6)
-example_net.operators[3].inputs.push(7)
-
-example_net.operators[4].func = 10
-example_net.operators[4].outputs.push(8)
-example_net.operators[4].inputs.push(9)
+classifyer.input_tensors = [0,1]
+classifyer.output_tensors = [3]
 
 
 
-console.log(example_net.tensors[7].function.name)
-console.log("fuck")
+
+var classifyer2 = new Network()
+
+classifyer2.add_tensor(new Tensor(true))
+classifyer2.add_tensor(new Tensor(true))
+classifyer2.add_tensor(new Tensor(true))
+classifyer2.add_tensor(new Tensor(true))
+classifyer2.add_tensor(new Tensor(true))
+
+op = new Operator(5)
+op.inputs = [0,1]
+op.outputs = [2]
+classifyer2.add_operator(op)
+
+op = new Operator(0)
+op.inputs = [2,3]
+op.outpus = [4]
+op.network = classifyer  // Previously defined network is an abstraction in this network
+classifyer2.add_operator(op)
+
+classifyer2.input_tensors = [0,1,3]
+classifyer2.output_tensors = [4]
+
+
+
+
+var conv2 = new Network()
+
+conv2.add_tensor(new Tensor(true))
+conv2.add_tensor(new Tensor(true))
+conv2.add_tensor(new Tensor(true))
+conv2.add_tensor(new Tensor(true))
+conv2.add_tensor(new Tensor(true))
+
+op = new Operator(10)
+op.inputs = [0,1]
+op.outputs = [2]
+conv2.add_operator(op)
+
+op = new Operator(10)
+op.inputs = [2,3]
+op.outpus = [4] 
+conv2.add_operator(op)
+
+conv2.input_tensors = [0,1,3]
+conv2.output_tensors = [4]
+
+
+
+
+var conv2classifyer2 = new Network()
+
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+conv2classifyer2.add_tensor(new Tensor(true))
+
+op = new Operator(0)
+op.inputs = [0,1,2]
+op.outputs = [3]
+op.network = conv2
+conv2classifyer2.add_operator(op)
+
+op = new Operator(0)
+op.inputs = [3,4,5]
+op.outputs = [6]
+op.network = classifyer2
+conv2classifyer2.add_operator(op)
+
+conv2classifyer2.input_tensors = [0,1,2,4,5]
+conv2classifyer2.output_tensors = [6]
+
+
+console.log(conv2classifyer2.to_string())
+
+console.log("\n")
+
+
+conv2classifyer2.expand()
+console.log(conv2classifyer2.to_string())
