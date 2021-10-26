@@ -8,21 +8,26 @@ class Network{
         this.param_tensors = []
         this.output_tensors = []
     }
+
     add_tensor(t){
         this.tensors.push(t);
     }
-    add_operator(o){
-        o = o.clone()
 
-        this.operators.push(o); 
+    add_operator(op){
 
+        var o = op.clone()
+
+        this.operators.push(o);
+        
         for(let i = 0; i < o.inputs.length; i++){
             this.tensors[o.inputs[i]].input_to.push(this.operators.length - 1)
         }
+        
         for(let i = 0; i < o.outputs.length; i++){
-            this.tensors[o.outputs[i]].output_of.push(this.operators.length - 1)
+            this.tensors[o.outputs[i]].output_of = this.operators.length - 1
         }
     }
+
     expand(){
         //assumes that network is alright, ok, and doin well
         //inner networks should never have parameter nodes (ok actually they should, but hold on, please just let me sleep)
@@ -38,8 +43,8 @@ class Network{
                 }
                 for(let k = 0; k < inner_net.operators.length; k++){
                     for(let j = 0; j < inner_net.operators[k].inputs.length; j++){
-                        var outer_inp = inner_net.inputs.indexOf(inner_net.operators[k].inputs[j])
-                        var outer_out = inner_net.outputs.indexOf(inner_net.operators[k].inputs[j])
+                        var outer_inp = inner_net.input_tensors.indexOf(inner_net.operators[k].inputs[j])
+                        var outer_out = inner_net.output_tensors.indexOf(inner_net.operators[k].inputs[j])
                         if(outer_inp != -1){
                             inner_net.operators[k].inputs[j] = this.operators[i].inputs[outer_inp]
                         }else if(outer_out != -1){
@@ -49,8 +54,8 @@ class Network{
                         }
                     }
                     for(let j = 0; j < inner_net.operators[k].outputs.length; j++){
-                        var outer_inp = inner_net.inputs.indexOf(inner_net.operators[k].outputs[j])
-                        var outer_out = inner_net.outputs.indexOf(inner_net.operators[k].outputs[j])
+                        var outer_inp = inner_net.input_tensors.indexOf(inner_net.operators[k].outputs[j])
+                        var outer_out = inner_net.output_tensors.indexOf(inner_net.operators[k].outputs[j])
                         if(outer_inp != -1){
                             inner_net.operators[k].outputs[j] = this.operators[i].inputs[outer_inp]
                         }else if(outer_out != -1){
@@ -59,26 +64,28 @@ class Network{
                             inner_net.operators[k].outputs[j] += offset
                         }
                     }
-                    this.add_operator(inner.operators[k])
+                    this.add_operator(inner_net.operators[k])
                 }
             }
         }
     }
 
     to_string(){
-        var str = ""
 
+        var str = ""
+        
         str += "Tensors: \n"
+        
         for(let i = 0; i < this.tensors.length; i++){
             str += "\t"+i+":\n"
 
             str += "\t\tinput_to:\n"
-            for(let k = 0; k < this.tensors[i].input_to; k++){
+            for(let k = 0; k < this.tensors[i].input_to.length; k++){
                 str += "\t\t\t" + this.tensors[i].input_to[k] + "\n"
             }
 
             str += "\t\toutput_of\n"
-            str += "\t\t\t"+this.tensors[i].output_of
+            str += "\t\t\t"+this.tensors[i].output_of + "\n"
         }
 
         str += "Operators: \n"
@@ -95,14 +102,14 @@ class Network{
                 str += "\t\t\t" + this.operators[i].outputs[k] + "\n"
             }
 
-            str += "\t\tfunc: "+this.operators[i].func
+            str += "\t\tfunc: "+this.operators[i].func + "\n"
         }
-
+        
         str += "input_tensors:\n"
         for(let i = 0; i < this.input_tensors.length; i++){
             str += "\t"+this.input_tensors[i]+"\n"
         }
-
+        
         str += "param_tensors:\n"
         for(let i = 0; i < this.param_tensors.length; i++){
             str += "\t"+this.param_tensors[i]+"\n"
@@ -112,6 +119,8 @@ class Network{
         for(let i = 0; i < this.output_tensors.length; i++){
             str += "\t"+this.output_tensors[i]+"\n"
         }
+
+        return str
     }
 }
 

@@ -14,13 +14,14 @@ classifyer.add_operator(op)
 
 op = new Operator(7)
 op.inputs = [2]
-op.outpus = [3]
+op.outputs = [3]
 classifyer.add_operator(op)
 
 classifyer.input_tensors = [0,1]
 classifyer.output_tensors = [3]
 
-
+console.log("CLASSIFYER")
+console.log(classifyer.to_string())
 
 
 var classifyer2 = new Network()
@@ -38,14 +39,15 @@ classifyer2.add_operator(op)
 
 op = new Operator(0)
 op.inputs = [2,3]
-op.outpus = [4]
+op.outputs = [4]
 op.network = classifyer  // Previously defined network is an abstraction in this network
 classifyer2.add_operator(op)
 
 classifyer2.input_tensors = [0,1,3]
 classifyer2.output_tensors = [4]
 
-
+console.log("CLASSIFYER2")
+console.log(classifyer2.to_string())
 
 
 var conv2 = new Network()
@@ -63,14 +65,15 @@ conv2.add_operator(op)
 
 op = new Operator(10)
 op.inputs = [2,3]
-op.outpus = [4] 
+op.outputs = [4] 
 conv2.add_operator(op)
 
 conv2.input_tensors = [0,1,3]
 conv2.output_tensors = [4]
 
 
-
+console.log("CONV2")
+console.log(conv2.to_string())
 
 var conv2classifyer2 = new Network()
 
@@ -97,7 +100,7 @@ conv2classifyer2.add_operator(op)
 conv2classifyer2.input_tensors = [0,1,2,4,5]
 conv2classifyer2.output_tensors = [6]
 
-
+console.log("CONV2CLASSIFYER2")
 console.log(conv2classifyer2.to_string())
 
 console.log("\n")
