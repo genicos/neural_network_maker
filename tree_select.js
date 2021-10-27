@@ -103,3 +103,43 @@ conv2classifyer2.output_tensors = [6]
 
 
 conv2classifyer2.expand()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var fulladder = new Network()
+
+console.log("asdasd")
+var shared_form = [2,2]
+fulladder.add_tensor(new Tensor(true,shared_form))
+fulladder.add_tensor(new Tensor(true,shared_form))
+fulladder.add_tensor(new Tensor(true))
+fulladder.add_tensor(new Tensor(true,shared_form))
+fulladder.add_tensor(new Tensor(true))
+
+console.log(fulladder.tensors[0].form)
+
+var op = new Operator(5)
+op.inputs = [0,1]
+op.outputs = [2]
+fulladder.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [2,3]
+op.outputs = [4]
+fulladder.add_operator(op)
+
+fulladder.input_tensors = [0,1,3]
+fulladder.output_tensors = [4]
+
+console.log(create_code(fulladder))

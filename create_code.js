@@ -4,6 +4,8 @@ function create_code(network){
 
     var code = ""
 
+
+    //First, we determine an order of operations that causes no dependency hazards
     var ordered_operations = []
     var computed_tensors = network.input_tensors
 
@@ -30,8 +32,13 @@ function create_code(network){
                     no_computation = false
 
                     ordered_operations.push(i)
+
+                    out_forms = function_table[network.operations[i].func].calc_form()
                     for(let k = 0; k < network.operators[i].outputs.length; k++){
-                        computed_tensors.push(k)
+                        computed_tensors.push(network.operators[i].outputs[k])
+
+
+                        network.tensors[network.operators[i].outputs[k]].form = out_forms[k]
                     }
                 }
             }
@@ -48,11 +55,14 @@ function create_code(network){
 
     for(let i = 0; i < network.tensors.length; i++){
         var size_of_tensor = 1;
-        for(let k = 0; k < network.tensors[i].form; k++){
-            size_of_tensor *= network.tensors[i].form[k]
+        console.log(network.tensors[i].form)
+        if(network.tensors[i].form){
+            for(let k = 0; k < network.tensors[i].form.length; k++){
+                size_of_tensor *= network.tensors[i].form[k]
+            }
         }
-
-        code += "double t"+String(i)+ "["+String(size_of_tensor)+"];"
+        code += "double t"+String(i)+ "["+String(size_of_tensor)+"];\n"
     }
 
+    return code
 }
