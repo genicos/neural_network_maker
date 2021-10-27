@@ -48,17 +48,18 @@ class Network{
 
     }
 
+    //This function finds all abstraction operators and replaces them with their
+    // inner network
     expand(){
         //assumes that network is alright, ok, and doin well
         //inner networks should never have parameter nodes (ok actually they should, but hold on, please just let me sleep)
-        console.log("ENTERED FUNCTION")
         
         
         for(let i = 0; i < this.operators.length; i++){
 
             //finding an abstraction operator to expand
             if(this.operators[i].func == 0 && this.operators[i].network){
-
+                
                 //recursively expanding inner networks
                 var inner_net = this.operators[i].network;
                 inner_net.expand();
@@ -70,6 +71,7 @@ class Network{
                 //add new operators
                 var old_operators_length = this.operators.length
 
+                
                 this.operators[i] = inner_net.operators[0]
                 for(let k = 1; k < inner_net.operators.length; k++){
                     this.add_operator(inner_net.operators[k])
@@ -88,6 +90,7 @@ class Network{
                     //these tensors will have a new id as measured by the outer network
                     var new_id = k;
 
+                    
                     if(inner_net.input_tensors.includes(k)){
                         var index = inner_net.input_tensors.indexOf(k)
 
@@ -101,12 +104,18 @@ class Network{
                         new_id = this.tensors.length - 1
                     }
 
+                    
+
+                    //finding all associated operators
                     for(let j = 0; j < inner_net.tensors[k].input_to.length; j++){
                         
                         var index_of_op = inner_net.tensors[k].input_to[j]
                         var op_index = inner_net.operators[ index_of_op ].inputs.indexOf(k)
                         
-                        if(op_index == 0){
+                        
+
+                        if(index_of_op == 0){
+                            
                             this.operators[i].inputs[op_index] = new_id
                         }else{
                             
@@ -114,12 +123,14 @@ class Network{
                         }
                     }
                     
-                    if(inner_net.tensors[k].output_of && inner_net.tensors[k].output_of != 0){
 
+                    if(inner_net.tensors[k].output_of || inner_net.tensors[k].output_of == 0){
+
+                        
                         var index_of_op = inner_net.tensors[k].output_of
                         var op_index = inner_net.operators[ index_of_op ].outputs.indexOf(k)
                         
-                        if(op_index == 0){
+                        if(index_of_op == 0){
                             this.operators[i].outputs[op_index] = new_id
                         }else{
                             this.operators[index_of_op + old_operators_length - 1].outputs[op_index] = new_id
@@ -133,6 +144,7 @@ class Network{
                 this.update_tensors()
             }
         }
+        
     }
 
     to_string(){
