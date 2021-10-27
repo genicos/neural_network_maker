@@ -72,6 +72,13 @@ function create_code(network){
             code += "}\n"
         }
 
+        if(this_op.func == 3){
+            code += "// Operator "+ ordered_operators[i] + ", tensor addition\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+"[i];\n"
+            code += "}\n"
+        }
+
         if(this_op.func == 5){
             code += "// Operator "+ ordered_operators[i] + ", fully connected layer\n"
             code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
