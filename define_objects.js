@@ -28,44 +28,109 @@ class Network{
         }
     }
 
+    update_tensors(){
+
+        for(let i = 0; i < this.tensors.length; i++){
+            this.tensors[i].input_to = []
+            this.tensors[i].output_of = null
+        }
+        for(let k = 0; k < this.operators.length; k++){
+
+            for(let i = 0; i < this.operators[k].inputs.length; i++){
+                this.tensors[this.operators[k].inputs[i]].input_to.push(k)
+            }
+            
+            for(let i = 0; i < this.operators[k].outputs.length; i++){
+                this.tensors[this.operators[k].outputs[i]].output_of = k
+            }
+
+        }
+
+    }
+
     expand(){
         //assumes that network is alright, ok, and doin well
         //inner networks should never have parameter nodes (ok actually they should, but hold on, please just let me sleep)
+        console.log("ENTERED FUNCTION")
+        
+        
         for(let i = 0; i < this.operators.length; i++){
+
+            //finding an abstraction operator to expand
             if(this.operators[i].func == 0 && this.operators[i].network){
+
+                //recursively expanding inner networks
                 var inner_net = this.operators[i].network;
                 inner_net.expand();
-                var offset = this.tensors.length - inner_net.input_tensors.length - inner_net.output_tensors.length;
-                for(let k = 0; k < inner_net.tensors.length; k++){
-                    if(!inner_net.input_tensors.includes(k) && !inner_net.output_tensors.includes(k)){
-                        this.add_tensor(inner_net.tensors[k]);
-                    }
-                }
-                for(let k = 0; k < inner_net.operators.length; k++){
-                    for(let j = 0; j < inner_net.operators[k].inputs.length; j++){
-                        var outer_inp = inner_net.input_tensors.indexOf(inner_net.operators[k].inputs[j])
-                        var outer_out = inner_net.output_tensors.indexOf(inner_net.operators[k].inputs[j])
-                        if(outer_inp != -1){
-                            inner_net.operators[k].inputs[j] = this.operators[i].inputs[outer_inp]
-                        }else if(outer_out != -1){
-                            inner_net.operators[k].inputs[j] = this.operators[i].outputs[outer_out]
-                        }else{
-                            inner_net.operators[k].inputs[j] += offset
-                        }
-                    }
-                    for(let j = 0; j < inner_net.operators[k].outputs.length; j++){
-                        var outer_inp = inner_net.input_tensors.indexOf(inner_net.operators[k].outputs[j])
-                        var outer_out = inner_net.output_tensors.indexOf(inner_net.operators[k].outputs[j])
-                        if(outer_inp != -1){
-                            inner_net.operators[k].outputs[j] = this.operators[i].inputs[outer_inp]
-                        }else if(outer_out != -1){
-                            inner_net.operators[k].outputs[j] = this.operators[i].outputs[outer_out]
-                        }else{
-                            inner_net.operators[k].outputs[j] += offset
-                        }
-                    }
+
+                //Take out abstraction operator
+                var abstraction = this.operators[i]
+                
+                
+                //add new operators
+                var old_operators_length = this.operators.length
+
+                this.operators[i] = inner_net.operators[0]
+                for(let k = 1; k < inner_net.operators.length; k++){
                     this.add_operator(inner_net.operators[k])
                 }
+                
+
+                //Loop through each inner net tensor
+                //  this tensor will have a new id under the outer network
+                //    we determine this new id
+                //  in each tensor, find all operators it is associated with
+                //      by checking inputs_to and output_of
+                //    we then update the associations of these operators so that they
+                //      point to the new id
+                for(let k = 0; k < inner_net.tensors.length; k++){
+
+                    //these tensors will have a new id as measured by the outer network
+                    var new_id = k;
+
+                    if(inner_net.input_tensors.includes(k)){
+                        var index = inner_net.input_tensors.indexOf(k)
+
+                        new_id = abstraction.inputs[index]
+                    }else if(inner_net.output_tensors.includes(k)){
+                        var index = inner_net.output_tensors.indexOf(k)
+
+                        new_id = abstraction.outputs[index]
+                    }else{
+                        this.add_tensor(inner_net.tensors[k])
+                        new_id = this.tensors.length - 1
+                    }
+
+                    for(let j = 0; j < inner_net.tensors[k].input_to.length; j++){
+                        
+                        var index_of_op = inner_net.tensors[k].input_to[j]
+                        var op_index = inner_net.operators[ index_of_op ].inputs.indexOf(k)
+                        
+                        if(op_index == 0){
+                            this.operators[i].inputs[op_index] = new_id
+                        }else{
+                            
+                            this.operators[index_of_op + old_operators_length - 1].inputs[op_index] = new_id
+                        }
+                    }
+                    
+                    if(inner_net.tensors[k].output_of && inner_net.tensors[k].output_of != 0){
+
+                        var index_of_op = inner_net.tensors[k].output_of
+                        var op_index = inner_net.operators[ index_of_op ].outputs.indexOf(k)
+                        
+                        if(op_index == 0){
+                            this.operators[i].outputs[op_index] = new_id
+                        }else{
+                            this.operators[index_of_op + old_operators_length - 1].outputs[op_index] = new_id
+                        }
+                    }
+
+
+
+                }
+                
+                this.update_tensors()
             }
         }
     }

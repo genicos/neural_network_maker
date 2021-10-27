@@ -24,6 +24,7 @@ console.log("CLASSIFYER")
 console.log(classifyer.to_string())
 
 
+
 var classifyer2 = new Network()
 
 classifyer2.add_tensor(new Tensor(true))
