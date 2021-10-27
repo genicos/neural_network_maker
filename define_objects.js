@@ -217,6 +217,20 @@ class Tensor{
         this.input_to = []
         this.output_of = null;
     }
+    calc_size(){
+        if(this.form){
+
+            var size_of_tensor = 1;
+
+            for(let k = 0; k < this.form.length; k++){
+                size_of_tensor *= this.form[k]
+            }
+
+            this.size = size_of_tensor
+        }else{
+            this.size = 0
+        }
+    }
 }
 
 class Operator{
@@ -225,6 +239,8 @@ class Operator{
         this.outputs = []
 
         this.func = func
+        this.size = null
+
         this.network = null
     }
     clone(){
@@ -249,31 +265,32 @@ class Func{
     }
     //takes array of tensors, 
     //returns array of output forms
-    calc_form(inputs){
+    calc_form(inputs, network){
         var out = []
 
         switch(this.name){
             case "identity":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break
             case "add":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break
             case "subtract":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break   
             case "scale":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break
             case "full":
-                form1 = inputs[0].form
-                form2 = inputs[1].form
 
-                form1_total = 1
+                var form1 = network.tensors[inputs[0]].form
+                var form2 = network.tensors[inputs[1]].form
+
+                var form1_total = 1
                 for(let i = 0; i < form1.length; i++){
                     form1_total *= form1[i]
                 }
-                form2_total = 1
+                var form2_total = 1
                 for(let i = 0; i < form2.length; i++){
                     form2_total *= form2[i]
                 }
@@ -290,10 +307,10 @@ class Func{
                 out.push(out_form)
                 break
             case "softmax":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break
             case "hardmax":
-                out.push(inputs[0].form)
+                out.push(network.tensors[inputs[0]].form)
                 break
             case "max":
                 var out_form = []
@@ -302,8 +319,8 @@ class Func{
                 out.push(out_form)
                 break
             case "full":
-                form1 = inputs[0].form
-                form2 = inputs[1].form
+                form1 = network.tensors[inputs[0]].form
+                form2 = network.tensors[inputs[1]].form
                 var out_form = []
 
                 

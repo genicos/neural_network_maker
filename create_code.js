@@ -5,8 +5,8 @@ function create_code(network){
     var code = ""
 
 
-    //First, we determine an order of operations that causes no dependency hazards
-    var ordered_operations = []
+    //First, we determine an order of operators that causes no dependency hazards
+    var ordered_operators = []
     var computed_tensors = network.input_tensors
 
     while(computed_tensors.length != 0){
@@ -16,7 +16,7 @@ function create_code(network){
         for(let i = 0; i < network.operators.length; i++){
 
             //only check operators we have not already computed
-            if(!ordered_operations.includes(i)){
+            if(!ordered_operators.includes(i)){
                 var all_inputs_are_computed = true
 
                 //check if all inputs have been computed
@@ -31,9 +31,11 @@ function create_code(network){
                 if(all_inputs_are_computed){
                     no_computation = false
 
-                    ordered_operations.push(i)
+                    ordered_operators.push(i)
 
-                    out_forms = function_table[network.operations[i].func].calc_form()
+
+                    out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
+
                     for(let k = 0; k < network.operators[i].outputs.length; k++){
                         computed_tensors.push(network.operators[i].outputs[k])
 
@@ -54,14 +56,32 @@ function create_code(network){
     }
 
     for(let i = 0; i < network.tensors.length; i++){
-        var size_of_tensor = 1;
-        console.log(network.tensors[i].form)
-        if(network.tensors[i].form){
-            for(let k = 0; k < network.tensors[i].form.length; k++){
-                size_of_tensor *= network.tensors[i].form[k]
-            }
+        
+        network.tensors[i].calc_size()
+
+        code += "double t"+String(i)+ "["+String(network.tensors[i].size)+"];\n"
+    }
+
+    for(let i = 0; i < ordered_operators.length;i++){
+        var this_op = network.operators[ordered_operators[i]]
+
+        if(this_op.func == 2){
+            code += "// Operator "+ ordered_operators[i] + ", tensor addition\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] + t"+this_op.inputs[1]+"[i];\n"
+            code += "}\n"
         }
-        code += "double t"+String(i)+ "["+String(size_of_tensor)+"];\n"
+
+        if(this_op.func == 5){
+            code += "// Operator "+ ordered_operators[i] + ", fully connected layer\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
+            code += "    for(uint j = 0; j < " + network.tensors[this_op.inputs[0]].size + "; j++){\n"
+            code += "        t"+this_op.outputs[0] +"[i] += t"+this_op.inputs[0] +"[j] * t"+this_op.inputs[1] +"[i*"+network.tensors[this_op.inputs[0]].size+" + j];\n"
+            code += "    }\n"
+            code += "}\n"
+        }
+        
     }
 
     return code
