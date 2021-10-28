@@ -1,0 +1,15 @@
+I gotta make at least two versions of in placeable operations, 
+    the in place version and the not in place version
+    Sometimes the input will be used for more operations, in that case
+    I should not use in place
+
+Softmax makes use of an exp function, which is slow and maybe unnecesary
+    I should replace it with something mathematically similair, 
+    that is also easy to calculate a gradient for
+
+convolution C code
+
+Optimization
+    multiple additions in a row
+    multiple scales in a row
+    
