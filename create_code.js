@@ -26,7 +26,7 @@ function create_code(network){
                     }
                 }
 
-                //if all inputs have been computed, then operator may be computed
+                //if all inputs have been computed, then the operator may be computed
                 // and all of the operators outputs can be computed
                 if(all_inputs_are_computed){
                     no_computation = false
@@ -58,8 +58,14 @@ function create_code(network){
     for(let i = 0; i < network.tensors.length; i++){
         
         network.tensors[i].calc_size()
+        if(network.tensors[i].size == 0){
 
-        code += "double t"+String(i)+ "["+String(network.tensors[i].size)+"];\n"
+        }else if(network.tensors[i].size == 1){
+            code += "float t"+String(i)+ ";\n"
+        }else{
+            code += "float t"+String(i)+ "["+String(network.tensors[i].size)+"];\n"
+        }
+        
     }
 
     for(let i = 0; i < ordered_operators.length;i++){
@@ -73,9 +79,15 @@ function create_code(network){
         }
 
         if(this_op.func == 3){
-            code += "// Operator "+ ordered_operators[i] + ", tensor addition\n"
+            code += "// Operator "+ ordered_operators[i] + ", tensor subtraction\n"
             code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+"[i];\n"
+            code += "}\n"
+        }
+        if(this_op.func == 4){
+            code += "// Operator "+ ordered_operators[i] + ", tensor scale\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * t"+this_op.inputs[1]+";\n"
             code += "}\n"
         }
 
@@ -88,6 +100,38 @@ function create_code(network){
             code += "    }\n"
             code += "}\n"
         }
+
+        if(this_op.func == 6){
+            code += "// Operator "+ ordered_operators[i] + ", amass\n"
+            code += "t"+this_op.outputs[0]+" = 0;\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0]+" += t"+this_op.inputs[0]+"[i];\n"
+            code += "}\n"
+        }
+
+        //Softmax is not done, gonna be hard
+        //maybe rethink what a softmax even is!
+        if(this_op.func == 7){
+            code += "// Operator "+ ordered_operators[i] + ", softmax\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0]+" += t"+this_op.inputs[0]+"[i];\n"
+            code += "}\n"
+        }
+
+        //Gotta replace -infinity with something
+        if(this_op.func == 8){
+            code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
+            code += "float temp"+ordered_operators[i] + " = -infinity;\n"
+            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "    if(temp"+ordered_operators[i] + " >= t"+this_op.inputs[0]+"){\n"
+            code += "        t"+this_op.inputs[0]+"[i] = 0;\n"
+            code += "    }else{\n"
+            code += "        temp"+ordered_operators[i] + " = t"+this_op.inputs[0]+"[i];\n"
+            code += "    }\n"
+            code += "}\n"
+        }
+
+        
         
     }
 
