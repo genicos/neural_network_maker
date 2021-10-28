@@ -119,6 +119,7 @@ function create_code(network){
         }
 
         //Gotta replace -infinity with something
+        //I actually wrote the in-place version here, i should replace it
         if(this_op.func == 8){
             code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
             code += "float temp"+ordered_operators[i] + " = -infinity;\n"
