@@ -2,6 +2,7 @@ var canvas = document.getElementById("network_creator")
 canvas.addEventListener("mousedown", doMouseDown, false)
 canvas.addEventListener("mousemove", doMouseMove, false)
 canvas.addEventListener("mouseup", doMouseUp, false)
+canvas.addEventListener("dblclick", doDoubleClick, false)
 var ctx = canvas.getContext("2d");
 
 canvas.width = canvas.getBoundingClientRect().width
@@ -14,7 +15,6 @@ var defaultFunctionLength = 50
 
 var down = false
 var draggedIndex = -1
-var tensorGrabbed = false
 
 var mouseX = 0;
 var mouseY = 0;
@@ -38,6 +38,8 @@ networks[0].add_tensor(new Tensor())
 networks[0].tensors[2].x = 150
 networks[0].tensors[2].y = 150
 networks[0].tensors[2].live = true
+
+console.log("DEBUG HEHEHEHEHEH ", networks[0].tensors[2].live)
 
 networks[0].add_operator(new Operator())
 networks[0].operators[0].inputs = [1, 2]
@@ -68,7 +70,7 @@ var seconds = 0;
 function drawTensor(network, tensorIndex) {
     let t = network.tensors[tensorIndex]
 
-    if (t.notghost) {
+    if (t.live) {
         ctx.fillStyle = "white"
         ctx.lineWidth = 1
         ctx.setLineDash([])
@@ -163,7 +165,7 @@ function draw() {
 }
 
 // returns list of indices of tensors wit mouse init
-function getGrabbedIndex() {
+function getHoveredTensorIndices() {
     grabbedList = []
 
     for (let i = 0; i < networks.length; i++) {
@@ -183,11 +185,24 @@ function getGrabbedIndex() {
 function doMouseDown(e) {
     down = true
     // console.log("Mouse position: ",mouseX," ", mouseY)
-    draggedList = getGrabbedIndex()
+    draggedList = getHoveredTensorIndices()
     if (draggedList.length != 0) {
         draggedIndex = draggedList[0]
-        tensorGrabbed = true
     }
+}
+
+function doDoubleClick(e) {
+    clickedList = getHoveredTensorIndices()
+    console.log("Clicked Indices ", clickedList)
+
+    clickedList.forEach(i => networks[networkIndex].tensors[i].live )
+
+    for (i = 0; i < clickedList.length; i++) {
+        clickedIndex = clickedList[i]
+        console.log("Clicked Index ", clickedIndex)
+        networks[networkIndex].tensors[clickedIndex].live = !networks[networkIndex].tensors[clickedIndex].live
+    }
+
 }
 
 function doMouseUp(e) {
@@ -207,14 +222,8 @@ function doMouseMove(e) {
 
     // drag and drop
     if (draggedIndex != -1) {
-        if (tensorGrabbed) {
-            networks[networkIndex].tensors[draggedIndex].x = mouseX
-            networks[networkIndex].tensors[draggedIndex].y = mouseY
-        }
-        else {
-            networks[networkIndex].operators[draggedIndex].x = mouseX
-            networks[networkIndex].operators[draggedIndex].y = mouseY
-        }
+        networks[networkIndex].tensors[draggedIndex].x = mouseX
+        networks[networkIndex].tensors[draggedIndex].y = mouseY
     }
 }
 
