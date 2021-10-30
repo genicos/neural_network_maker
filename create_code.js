@@ -3,6 +3,8 @@ function create_code(network){
     network.expand()
 
     var code = ""
+    code += "#include <float.h>\n"
+    code += "#include <inttypes.h>\n"
 
 
     //First, we determine an order of operators that causes no dependency hazards
@@ -73,29 +75,29 @@ function create_code(network){
 
         if(this_op.func == 2){
             code += "// Operator "+ ordered_operators[i] + ", tensor addition\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] + t"+this_op.inputs[1]+"[i];\n"
             code += "}\n"
         }
 
         if(this_op.func == 3){
             code += "// Operator "+ ordered_operators[i] + ", tensor subtraction\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+"[i];\n"
             code += "}\n"
         }
         if(this_op.func == 4){
             code += "// Operator "+ ordered_operators[i] + ", tensor scale\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * t"+this_op.inputs[1]+";\n"
             code += "}\n"
         }
 
         if(this_op.func == 5){
             code += "// Operator "+ ordered_operators[i] + ", fully connected layer\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
-            code += "    for(uint j = 0; j < " + network.tensors[this_op.inputs[0]].size + "; j++){\n"
+            code += "    for(uint32_t j = 0; j < " + network.tensors[this_op.inputs[0]].size + "; j++){\n"
             code += "        t"+this_op.outputs[0] +"[i] += t"+this_op.inputs[0] +"[j] * t"+this_op.inputs[1] +"[i*"+network.tensors[this_op.inputs[0]].size+" + j];\n"
             code += "    }\n"
             code += "}\n"
@@ -104,7 +106,7 @@ function create_code(network){
         if(this_op.func == 6){
             code += "// Operator "+ ordered_operators[i] + ", amass\n"
             code += "t"+this_op.outputs[0]+" = 0;\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+" += t"+this_op.inputs[0]+"[i];\n"
             code += "}\n"
         }
@@ -113,16 +115,32 @@ function create_code(network){
         //maybe rethink what a softmax even is!
         if(this_op.func == 7){
             code += "// Operator "+ ordered_operators[i] + ", softmax\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0]+" += t"+this_op.inputs[0]+"[i];\n"
             code += "}\n"
         }
 
-        //Gotta replace -infinity with something
-        //I actually wrote the in-place version here, i should replace it
+        
         if(this_op.func == 8){
             code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
-            code += "float temp"+ordered_operators[i] + " = -infinity;\n"
+            code += "float temp"+ordered_operators[i] + "_0 = FLT_MIN;\n"
+            code += "uint32_t temp"+ordered_operators[i]+"_1 = 0;\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "    if(temp"+ordered_operators[i] + "_0 < t"+this_op.inputs[0]+"){\n"
+            code += "        temp"+ordered_operators[i] +"_1 = i;\n"
+            code += "        temp"+ordered_operators[i] + "_0 = t"+this_op.inputs[0]+"[i];\n"
+            code += "    }\n"
+            code += "}\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
+            code += "}\n"
+            code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_1] = temp"+ordered_operators[i] + "_0;\n"
+        }
+
+        /* In place version
+        if(this_op.func == 8){
+            code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
+            code += "float temp"+ordered_operators[i] + " = FLT_MIN;\n"
             code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
             code += "    if(temp"+ordered_operators[i] + " >= t"+this_op.inputs[0]+"){\n"
             code += "        t"+this_op.inputs[0]+"[i] = 0;\n"
@@ -130,7 +148,8 @@ function create_code(network){
             code += "        temp"+ordered_operators[i] + " = t"+this_op.inputs[0]+"[i];\n"
             code += "    }\n"
             code += "}\n"
-        }
+        }*/
+
 
         
         
