@@ -128,6 +128,7 @@ fulladder.add_tensor(new Tensor(true))
 fulladder.add_tensor(new Tensor(true,shared_form))
 fulladder.add_tensor(new Tensor(true))
 fulladder.add_tensor(new Tensor(true))
+fulladder.add_tensor(new Tensor(true))
 
 
 
@@ -146,8 +147,13 @@ op.inputs = [4]
 op.outputs = [5]
 fulladder.add_operator(op)
 
+op = new Operator(9)
+op.inputs = [5]
+op.outputs = [6]
+fulladder.add_operator(op)
+
 fulladder.input_tensors = [0,1,3]
-fulladder.output_tensors = [5]
+fulladder.output_tensors = [6]
 
 console.log(fulladder.to_string())
 

@@ -138,13 +138,13 @@ function create_code(network){
             code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_maxindex] = temp"+ordered_operators[i] + "_maxvalue;\n"
         }
 
-        //Not functional
+        
         if(this_op.func == 9){
             code += "// Operator "+ ordered_operators[i] + ", max\n"
-            code += "t"+this_op.outputs[i]+" = FLT_MIN;\n"
+            code += "t"+this_op.outputs[0]+" = FLT_MIN;\n"
             code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "    if(t"+this_op.outputs[i]+" < t"+this_op.inputs[0]+"[i]){\n"
-            code += "        t"+this_op.outputs[i]+" = t"+this_op.inputs[0]+"[i];\n"
+            code += "    if(t"+this_op.outputs[0]+" < t"+this_op.inputs[0]+"[i]){\n"
+            code += "        t"+this_op.outputs[0]+" = t"+this_op.inputs[0]+"[i];\n"
             code += "    }\n"
             code += "}\n"
         }
