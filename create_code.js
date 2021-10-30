@@ -72,6 +72,7 @@ function create_code(network){
 
     for(let i = 0; i < ordered_operators.length;i++){
         var this_op = network.operators[ordered_operators[i]]
+        code += "\n"
 
         if(this_op.func == 2){
             code += "// Operator "+ ordered_operators[i] + ", tensor addition\n"
@@ -123,32 +124,36 @@ function create_code(network){
         
         if(this_op.func == 8){
             code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
-            code += "float temp"+ordered_operators[i] + "_0 = FLT_MIN;\n"
-            code += "uint32_t temp"+ordered_operators[i]+"_1 = 0;\n"
+            code += "float temp"+ordered_operators[i] + "_maxvalue = FLT_MIN;\n"
+            code += "uint32_t temp"+ordered_operators[i]+"_maxindex = 0;\n"
             code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "    if(temp"+ordered_operators[i] + "_0 < t"+this_op.inputs[0]+"){\n"
-            code += "        temp"+ordered_operators[i] +"_1 = i;\n"
-            code += "        temp"+ordered_operators[i] + "_0 = t"+this_op.inputs[0]+"[i];\n"
+            code += "    if(temp"+ordered_operators[i] + "_maxvalue < t"+this_op.inputs[0]+"[i]){\n"
+            code += "        temp"+ordered_operators[i] + "_maxvalue = t"+this_op.inputs[0]+"[i];\n"
+            code += "        temp"+ordered_operators[i] +"_maxindex = i;\n"
             code += "    }\n"
             code += "}\n"
             code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
             code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
             code += "}\n"
-            code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_1] = temp"+ordered_operators[i] + "_0;\n"
+            code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_maxindex] = temp"+ordered_operators[i] + "_maxvalue;\n"
         }
 
-        /* In place version
-        if(this_op.func == 8){
+        //Not functional
+        if(this_op.func == 9){
             code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
-            code += "float temp"+ordered_operators[i] + " = FLT_MIN;\n"
-            code += "for(uint i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "    if(temp"+ordered_operators[i] + " >= t"+this_op.inputs[0]+"){\n"
-            code += "        t"+this_op.inputs[0]+"[i] = 0;\n"
-            code += "    }else{\n"
-            code += "        temp"+ordered_operators[i] + " = t"+this_op.inputs[0]+"[i];\n"
+            code += "float temp"+ordered_operators[i] + "_maxvalue = FLT_MIN;\n"
+            code += "uint32_t temp"+ordered_operators[i]+"_maxindex = 0;\n"
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "    if(temp"+ordered_operators[i] + "_maxvalue < t"+this_op.inputs[0]+"[i]){\n"
+            code += "        temp"+ordered_operators[i] + "_maxvalue = t"+this_op.inputs[0]+"[i];\n"
+            code += "        temp"+ordered_operators[i] +"_maxindex = i;\n"
             code += "    }\n"
             code += "}\n"
-        }*/
+            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+            code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
+            code += "}\n"
+            code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_maxindex] = temp"+ordered_operators[i] + "_maxvalue;\n"
+        }
 
 
         

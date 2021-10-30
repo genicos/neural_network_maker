@@ -116,6 +116,7 @@ conv2classifyer2.expand()
 
 
 
+//CREATE CODE TEST
 
 var fulladder = new Network()
 
@@ -125,6 +126,7 @@ fulladder.add_tensor(new Tensor(true,shared_form))
 fulladder.add_tensor(new Tensor(true,[16]))
 fulladder.add_tensor(new Tensor(true))
 fulladder.add_tensor(new Tensor(true,shared_form))
+fulladder.add_tensor(new Tensor(true))
 fulladder.add_tensor(new Tensor(true))
 
 
@@ -139,8 +141,13 @@ op.inputs = [2,3]
 op.outputs = [4]
 fulladder.add_operator(op)
 
+op = new Operator(8)
+op.inputs = [4]
+op.outputs = [5]
+fulladder.add_operator(op)
+
 fulladder.input_tensors = [0,1,3]
-fulladder.output_tensors = [4]
+fulladder.output_tensors = [5]
 
 console.log(fulladder.to_string())
 
