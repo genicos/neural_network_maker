@@ -268,7 +268,8 @@ class Func{
         this.name = name
         this.num_inputs = num_inputs
     }
-    //takes array of tensors, 
+
+    //takes array of tensors, with forms computed
     //returns array of output forms
     calc_form(inputs, network){
         var out = []

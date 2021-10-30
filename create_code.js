@@ -140,24 +140,14 @@ function create_code(network){
 
         //Not functional
         if(this_op.func == 9){
-            code += "// Operator "+ ordered_operators[i] + ", hardmax\n"
-            code += "float temp"+ordered_operators[i] + "_maxvalue = FLT_MIN;\n"
-            code += "uint32_t temp"+ordered_operators[i]+"_maxindex = 0;\n"
+            code += "// Operator "+ ordered_operators[i] + ", max\n"
+            code += "t"+this_op.outputs[i]+" = FLT_MIN;\n"
             code += "for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "    if(temp"+ordered_operators[i] + "_maxvalue < t"+this_op.inputs[0]+"[i]){\n"
-            code += "        temp"+ordered_operators[i] + "_maxvalue = t"+this_op.inputs[0]+"[i];\n"
-            code += "        temp"+ordered_operators[i] +"_maxindex = i;\n"
+            code += "    if(t"+this_op.outputs[i]+" < t"+this_op.inputs[0]+"[i]){\n"
+            code += "        t"+this_op.outputs[i]+" = t"+this_op.inputs[0]+"[i];\n"
             code += "    }\n"
             code += "}\n"
-            code += "for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
-            code += "    t"+this_op.outputs[0] +"[i] = 0;\n"
-            code += "}\n"
-            code += "t"+this_op.outputs[0] +"[temp"+ordered_operators[i]+"_maxindex] = temp"+ordered_operators[i] + "_maxvalue;\n"
         }
-
-
-        
-        
     }
 
     return code
