@@ -37,6 +37,7 @@ networks[0].tensors[1].y = 200
 networks[0].add_tensor(new Tensor())
 networks[0].tensors[2].x = 150
 networks[0].tensors[2].y = 150
+networks[0].tensors[2].live = true
 
 networks[0].add_operator(new Operator())
 networks[0].operators[0].inputs = [1, 2]
@@ -65,11 +66,20 @@ function init() {
 var seconds = 0;
 
 function drawTensor(network, tensorIndex) {
-    ctx.fillStyle = "white"
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = 'black'
-
     let t = network.tensors[tensorIndex]
+
+    if (t.notghost) {
+        ctx.fillStyle = "white"
+        ctx.lineWidth = 1
+        ctx.setLineDash([])
+        ctx.strokeStyle = 'black'
+    }
+    else {
+        ctx.fillStyle = "rgba(255,255,255,0)"
+        ctx.lineWidth = 1
+        ctx.setLineDash([3,4])
+        ctx.strokeStyle = 'Grey'
+    }
 
     ctx.beginPath()
     ctx.rect(t.x - tensorRadius, t.y - tensorRadius, 2 * tensorRadius, 2 * tensorRadius)
@@ -152,9 +162,9 @@ function draw() {
     window.requestAnimationFrame(draw);
 }
 
-function doMouseDown(e) {
-    down = true
-    // console.log("Mouse position: ",mouseX," ", mouseY)
+// returns list of indices of tensors wit mouse init
+function getGrabbedIndex() {
+    grabbedList = []
 
     for (let i = 0; i < networks.length; i++) {
         for (let j = 0; j < networks[0].tensors.length; j++) {
@@ -162,15 +172,21 @@ function doMouseDown(e) {
                 networks[i].tensors[j].x + tensorRadius > mouseX &&
                 networks[i].tensors[j].y - tensorRadius < mouseY &&
                 networks[i].tensors[j].y + tensorRadius > mouseY) {
-                console.log("In tensor ", j)
-                draggedIndex = j
-                tensorGrabbed = true
-                break
-            }
-            else {
-                console.log("Outside of tensor")
+                grabbedList.push(j)
             }
         }
+    }
+
+    return grabbedList
+}
+
+function doMouseDown(e) {
+    down = true
+    // console.log("Mouse position: ",mouseX," ", mouseY)
+    draggedList = getGrabbedIndex()
+    if (draggedList.length != 0) {
+        draggedIndex = draggedList[0]
+        tensorGrabbed = true
     }
 }
 

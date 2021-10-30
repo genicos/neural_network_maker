@@ -202,9 +202,14 @@ class Network{
 }
 
 class Tensor{
-    constructor(notghost, form) {
+    constructor(live, form) {
         this.scalar = false
-        this.ghost = !notghost
+
+        // this code is hilarious, and it works \/
+        if (live)
+            this.live = live
+        else
+            this.live = false
 
         if(form)
             this.form = form
