@@ -257,12 +257,6 @@ class Operator{
     }
 }
 
-
-
-
-
-
-
 class Func{
     constructor(name, num_inputs){
         this.name = name

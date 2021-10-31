@@ -39,15 +39,28 @@ networks[0].tensors[2].x = 150
 networks[0].tensors[2].y = 150
 networks[0].tensors[2].live = true
 
-console.log("DEBUG HEHEHEHEHEH ", networks[0].tensors[2].live)
-
 networks[0].add_operator(new Operator())
 networks[0].operators[0].inputs = [1, 2]
 networks[0].operators[0].outputs = [0]
 networks[0].operators[0].func = 5
 
-networks[0].tensors[0].parent_1 = 1
-networks[0].tensors[0].parent_2 = 2
+networks[0].add_tensor(new Tensor())
+networks[0].tensors[3].x = 400
+networks[0].tensors[3].y = 200
+
+networks[0].add_tensor(new Tensor())
+networks[0].tensors[4].x = 300
+networks[0].tensors[4].y = 200
+
+networks[0].add_tensor(new Tensor())
+networks[0].tensors[5].x = 350
+networks[0].tensors[5].y = 150
+networks[0].tensors[5].live = true
+
+networks[0].add_operator(new Operator())
+networks[0].operators[1].inputs = [4, 5]
+networks[0].operators[1].outputs = [3]
+networks[0].operators[1].func = 5
 
 console.log(networks[0].tensors[0].x)
 
@@ -185,29 +198,83 @@ function getHoveredTensorIndices() {
 function doMouseDown(e) {
     down = true
     // console.log("Mouse position: ",mouseX," ", mouseY)
-    draggedList = getHoveredTensorIndices()
+    let draggedList = getHoveredTensorIndices()
+
     if (draggedList.length != 0) {
         draggedIndex = draggedList[0]
     }
 }
 
 function doDoubleClick(e) {
-    clickedList = getHoveredTensorIndices()
+    let clickedList = getHoveredTensorIndices()
     console.log("Clicked Indices ", clickedList)
 
     clickedList.forEach(i => networks[networkIndex].tensors[i].live )
 
-    for (i = 0; i < clickedList.length; i++) {
+    for (let i = 0; i < clickedList.length; i++) {
         clickedIndex = clickedList[i]
-        console.log("Clicked Index ", clickedIndex)
         networks[networkIndex].tensors[clickedIndex].live = !networks[networkIndex].tensors[clickedIndex].live
     }
-
 }
 
 function doMouseUp(e) {
     down = false
     draggedIndex = -1
+
+    let clickedList = getHoveredTensorIndices()
+
+    if (clickedList.length >= 2) {
+        mergeTensors(clickedList[0], clickedList[1])
+        // if either tensor are ghosts
+    }
+}
+
+function mergeTensors(cind0, cind1) {
+    if (!networks[networkIndex].tensors[cind1].live || !networks[networkIndex].tensors[cind1].live) {
+        let t0 = networks[networkIndex].tensors[cind0]
+        let t1 = networks[networkIndex].tensors[cind1]
+
+        console.log(t0.output_of, t1.output_of)
+        // t1 stays, t2 is deleted
+        if (t0.output_of != null && t1.output_of == null) {
+            console.log("t0")
+            let ind = networks[networkIndex].operators[t0.output_of].inputs.indexOf(cind1)
+            networks[networkIndex].operators[t0.output_of].inputs[ind] = cind0
+
+            t0.input_of = t1.input_of
+            deleteTensor(t1)
+        }
+        else if (t1.output_of == null && t0.output_of != null) {
+            console.log("t1")
+            let ind = networks[networkIndex].operators[t1.output_of].inputs.indexOf(cind0)
+            networks[networkIndex].operators[t1.output_of].inputs[ind] = cind1
+
+            t1.input_of = t0.input_of
+            deleteTensor(t0)
+        }
+        else {
+            console.log("There's an ish")
+        }
+    }
+}
+
+function deleteTensor(index) {
+    // in operators, decrement input and output indices if greater than deleted indices
+    for (let i = 0; i < networks[networkIndex].operators.length; i++) {
+        for (let j = 0; j < networks[networkIndex].operators[i].inputs.length; j++) {
+            if (networks[networkIndex].operators[i].inputs[j] > index) {
+                networks[networkIndex].operators[i].inputs[j] -= 1
+            }
+        }
+        for (let j = 0; j < networks[networkIndex].operators[i].outputs.length; j++) {
+            if (networks[networkIndex].operators[i].outputs[j] > index) {
+                networks[networkIndex].operators[i].outputs[j] -= 1
+            }
+        }
+    }
+
+    // delete relevant tensor
+    return networks[networkIndex].tensors.splice(index, 1)
 }
 
 function doMouseMove(e) {
