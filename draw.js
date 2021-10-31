@@ -26,43 +26,41 @@ var networks = []
 var networkIndex = 0
 
 networks.push(new Network())
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(false))
 networks[0].tensors[0].x = 200
 networks[0].tensors[0].y = 200
 
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(false))
 networks[0].tensors[1].x = 100
 networks[0].tensors[1].y = 200
 
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(false))
 networks[0].tensors[2].x = 150
 networks[0].tensors[2].y = 150
-networks[0].tensors[2].live = true
 
-networks[0].add_operator(new Operator())
-networks[0].operators[0].inputs = [1, 2]
-networks[0].operators[0].outputs = [0]
-networks[0].operators[0].func = 5
+let op0 = new Operator()
+op0.inputs = [1, 2]
+op0.outputs = [0]
+op0.func = 5
+networks[0].add_operator(op0)
 
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(true))
 networks[0].tensors[3].x = 400
 networks[0].tensors[3].y = 200
 
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(true))
 networks[0].tensors[4].x = 300
 networks[0].tensors[4].y = 200
 
-networks[0].add_tensor(new Tensor())
+networks[0].add_tensor(new Tensor(true))
 networks[0].tensors[5].x = 350
 networks[0].tensors[5].y = 150
-networks[0].tensors[5].live = true
 
-networks[0].add_operator(new Operator())
-networks[0].operators[1].inputs = [4, 5]
-networks[0].operators[1].outputs = [3]
-networks[0].operators[1].func = 5
-
-console.log(networks[0].tensors[0].x)
+let op1 = new Operator()
+op1.inputs = [4, 5]
+op1.outputs = [3]
+op1.func = 5 
+networks[0].add_operator(op1)
 
 function init() {
     last_frame = Date.now()
@@ -230,32 +228,43 @@ function doMouseUp(e) {
 }
 
 function mergeTensors(cind0, cind1) {
-    if (!networks[networkIndex].tensors[cind1].live || !networks[networkIndex].tensors[cind1].live) {
-        let t0 = networks[networkIndex].tensors[cind0]
-        let t1 = networks[networkIndex].tensors[cind1]
-
-        console.log(t0.output_of, t1.output_of)
-        // t1 stays, t2 is deleted
-        if (t0.output_of != null && t1.output_of == null) {
-            console.log("t0")
-            let ind = networks[networkIndex].operators[t0.output_of].inputs.indexOf(cind1)
-            networks[networkIndex].operators[t0.output_of].inputs[ind] = cind0
-
-            t0.input_of = t1.input_of
-            deleteTensor(t1)
-        }
-        else if (t1.output_of == null && t0.output_of != null) {
-            console.log("t1")
-            let ind = networks[networkIndex].operators[t1.output_of].inputs.indexOf(cind0)
-            networks[networkIndex].operators[t1.output_of].inputs[ind] = cind1
-
-            t1.input_of = t0.input_of
-            deleteTensor(t0)
-        }
-        else {
-            console.log("There's an ish")
-        }
+    if (networks[networkIndex].tensors[cind0].live && networks[networkIndex].tensors[cind1].live) {
+        console.log("Both merged tensors are live, so don't do anything.")
+        return
     }
+        
+    let t0 = networks[networkIndex].tensors[cind0]
+    let t1 = networks[networkIndex].tensors[cind1]
+
+    let toDeleteIndex = cind1  // ugh this this uggo, but so is not using t0 and t1
+
+    // t0 is already an output to a function and stays, t1 is an input to a function and is deleted
+    if (t0.output_of != null && t1.output_of == null) {}
+    else if (t1.output_of == null && t0.output_of != null) {
+        tmp = t1
+        t1 = t0
+        t0 = tmp
+        toDeleteIndex = cind0
+    }
+    else {
+        console.log("Error merging, only one input must have an output")
+        return
+    }
+
+    // check that they aren't input and output to the same function
+    console.log(t0.output_of, t1.input_to)
+    if (t0.output_of == t1.input_to) {
+        console.log("These are input and output of the same function, dummy!")
+        return
+    }
+    
+    let ind = networks[networkIndex].operators[t1.input_to].inputs.indexOf(cind1)
+    networks[networkIndex].operators[t1.input_to].inputs[ind] = cind0
+
+    t0.input_to = t1.input_to
+    t0.live = true 
+
+    deleteTensor(toDeleteIndex)
 }
 
 function deleteTensor(index) {
