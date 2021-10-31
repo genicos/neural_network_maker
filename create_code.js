@@ -195,13 +195,36 @@ function create_code(network){
         //convolution, this one will be difficult
         if(this_op.func == 10){
             code += "    // Operator "+ordered_operators[i]+", convolution\n"
-            for(let i = 0; i < network.tensors[this_op.outputs[0]]; i++){
+            for(let i = 0; i < network.tensors[this_op.outputs[0]].form.length; i++){
                 code += "    "
                 for(let k = 0; k < i; k++){
                     code += "    "
                 }
-                
+                code += "for(uint32_t i"+i+"; i"+i+" < " + network.tensors[this_op.outputs[0]].form[i] + "; i"+i+"++){\n"
+            }
 
+            code += "    "
+            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length; k++){
+                code += "    "
+            }
+            code += "\n"
+
+            for(let i = 0; i < network.tensors[this_op.inputs[1]].form.length; i++){
+                code += "    "
+                for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length + i; k++){
+                    code += "    "
+                }
+                code += "for(uint32_t j"+i+"; j"+i+" < " + network.tensors[this_op.outputs[0]].form[i] + "; j"+i+"++){\n"
+            }
+
+            code += "    "
+            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length * 2; k++){
+                code += "    "
+            }
+
+            code += "t"+this_op.outputs[0]+ "["
+            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length + i; k++){
+                
             }
         }
 
