@@ -232,9 +232,11 @@ class Tensor{
             }
 
             this.size = size_of_tensor
+            
         }else{
             this.size = 0
         }
+        return this.size
     }
 }
 
@@ -351,7 +353,7 @@ function_table[3] = new Func("subtract", 2)
 function_table[4] = new Func("scale", 2)
 function_table[5] = new Func("full", 2)
 function_table[6] = new Func("amass", 1)
-function_table[7] = new Func("softmax", 1)
+function_table[7] = new Func("softmax", 1) // softmax exponent base is 2s
 function_table[8] = new Func("hardmax", 1)
 function_table[9] = new Func("max", 1)
 function_table[10] = new Func("convolution", 2)
