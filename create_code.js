@@ -18,6 +18,11 @@ function create_code(network){
     while(computed_tensors.length != 0){
         var no_computation = true
 
+        console.log("ORDERED OPERATORS\n");
+        console.log(ordered_operators)
+        console.log("COMPUTED TENSORS\n")
+        console.log(computed_tensors)
+
         //find operators which can now be computed
         for(let i = 0; i < network.operators.length; i++){
 
@@ -39,9 +44,9 @@ function create_code(network){
 
                     ordered_operators.push(i)
 
-
+                    console.log("calculating operator " + i)
                     out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
-
+                    console.log("out_forms " + out_forms)
                     for(let k = 0; k < network.operators[i].outputs.length; k++){
                         computed_tensors.push(network.operators[i].outputs[k])
 
@@ -60,6 +65,9 @@ function create_code(network){
             return false;
         }
     }
+
+    
+
 
     //TODO sometimes it will need to return a float **, when theres multiple outputs"
     //TODO sometimes it will need to return a float *, when theres one output"
@@ -194,37 +202,123 @@ function create_code(network){
 
         //convolution, this one will be difficult
         if(this_op.func == 10){
+
+            output_form_cascade = []
+            if(network.tensors[this_op.outputs[0]].form.length > 1){
+                output_form_cascade.push(network.tensors[this_op.outputs[0]].size / network.tensors[this_op.outputs[0]].form[0])
+                for(let j = 1; j < network.tensors[this_op.outputs[0]].form.length; j++){
+                    output_form_cascade.push(output_form_cascade[j-1] / network.tensors[this_op.outputs[0]].form[j])
+                }
+            }
+
+            input_form_cascade = []
+            if(network.tensors[this_op.inputs[0]].form.length > 1){
+                input_form_cascade.push(network.tensors[this_op.inputs[0]].size / network.tensors[this_op.inputs[0]].form[0])
+                for(let j = 1; j < network.tensors[this_op.inputs[0]].form.length; j++){
+                    input_form_cascade.push(input_form_cascade[j-1] / network.tensors[this_op.inputs[0]].form[j])
+                }
+            }
+
+            parameter_form_cascade = []
+            if(network.tensors[this_op.inputs[1]].form.length > 1){
+                parameter_form_cascade.push(network.tensors[this_op.inputs[1]].size / network.tensors[this_op.inputs[1]].form[0])
+                for(let j = 1; j < network.tensors[this_op.inputs[1]].form.length; j++){
+                    parameter_form_cascade.push(parameter_form_cascade[j-1] / network.tensors[this_op.inputs[1]].form[j])
+                }
+            }
+
+
             code += "    // Operator "+ordered_operators[i]+", convolution\n"
-            for(let i = 0; i < network.tensors[this_op.outputs[0]].form.length; i++){
+            for(let j = 0; j < network.tensors[this_op.outputs[0]].form.length; j++){
                 code += "    "
-                for(let k = 0; k < i; k++){
+                for(let k = 0; k < j; k++){
                     code += "    "
                 }
-                code += "for(uint32_t i"+i+"; i"+i+" < " + network.tensors[this_op.outputs[0]].form[i] + "; i"+i+"++){\n"
+                code += "for(uint32_t i"+j+" = 0; i"+j+" < " + network.tensors[this_op.outputs[0]].form[j] + "; i"+j+"++){\n"
             }
 
             code += "    "
             for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length; k++){
                 code += "    "
             }
-            code += "\n"
+            
+            //set output to 0
+            code += "t"+this_op.outputs[0]+ "["
+            for(let k = 0; k < network.tensors[this_op.inputs[0]].form.length; k++){
+                code += "i"+k+"*"+output_form_cascade[k]
+                if(k < network.tensors[this_op.inputs[0]].form.length - 1){
+                    code += " + "
+                }
+            }
+            code += "] = 0;\n"
 
-            for(let i = 0; i < network.tensors[this_op.inputs[1]].form.length; i++){
+            for(let j = 0; j < network.tensors[this_op.inputs[1]].form.length; j++){
                 code += "    "
-                for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length + i; k++){
+                for(let k = 0; k < network.tensors[this_op.inputs[1]].form.length + j; k++){
                     code += "    "
                 }
-                code += "for(uint32_t j"+i+"; j"+i+" < " + network.tensors[this_op.outputs[0]].form[i] + "; j"+i+"++){\n"
+                code += "for(uint32_t j"+j+" = 0; j"+j+" < " + network.tensors[this_op.inputs[1]].form[j] + "; j"+j+"++){\n"
             }
 
             code += "    "
-            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length * 2; k++){
+            for(let k = 0; k < network.tensors[this_op.inputs[0]].form.length * 2; k++){
                 code += "    "
             }
 
+            //We are now inside all for loops
+
+            //output access
             code += "t"+this_op.outputs[0]+ "["
-            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length + i; k++){
-                
+            for(let k = 0; k < network.tensors[this_op.inputs[0]].form.length; k++){
+                code += "i"+k+"*"+output_form_cascade[k]
+                if(k < network.tensors[this_op.inputs[0]].form.length - 1){
+                    code += " + "
+                }
+            }
+            code += "] += "
+
+            //input access
+            code += "t"+this_op.inputs[0]+ "["
+            for(let k = 0; k < network.tensors[this_op.inputs[0]].form.length; k++){
+                code += "(i"+k+" + j"+k+")*"+input_form_cascade[k]
+                if(k < network.tensors[this_op.inputs[0]].form.length - 1){
+                    code += " + "
+                }
+            }
+            code += "] * "
+
+            //parameter access
+            code += "t"+this_op.inputs[1]+ "["
+            for(let k = 0; k < network.tensors[this_op.inputs[0]].form.length; k++){
+                code += "j"+k+"*"+parameter_form_cascade[k]
+                if(k < network.tensors[this_op.inputs[0]].form.length - 1){
+                    code += " + "
+                }
+            }
+            code += "];\n"
+
+            //closing inner loops
+            for(let j = 0; j < network.tensors[this_op.inputs[1]].form.length; j++){
+                code += "    "
+                for(let k = 0; k < network.tensors[this_op.inputs[1]].form.length * 2 - j - 1; k++){
+                    code += "    "
+                }
+                code += "}\n"
+            }
+
+            code += "    "
+            for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length; k++){
+                code += "    "
+            }
+            code +="\n"
+
+            //Closing outer loops
+            for(let j = 0; j < network.tensors[this_op.outputs[0]].form.length; j++){
+                code += "    "
+                for(let k = 0; k < network.tensors[this_op.outputs[0]].form.length - j - 1; k++){
+                    code += "    "
+                }
+                code += "}\n"
             }
         }
 

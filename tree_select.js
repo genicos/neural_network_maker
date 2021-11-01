@@ -158,3 +158,16 @@ fulladder.output_tensors = [6]
 console.log(fulladder.to_string())
 
 console.log(create_code(fulladder))
+
+
+console.log("\n\nCONV2CLASSIFYER2\n\n")
+
+conv2classifyer2.tensors[0].form = [28,28]
+conv2classifyer2.tensors[1].form = [3,3]
+conv2classifyer2.tensors[2].form = [3,3]
+conv2classifyer2.tensors[4].form = [576,18]
+conv2classifyer2.tensors[5].form = [18,10]
+
+console.log(conv2classifyer2.to_string())
+console.log(create_code(conv2classifyer2))
+

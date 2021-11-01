@@ -155,11 +155,15 @@ class Network{
         
         for(let i = 0; i < this.tensors.length; i++){
             str += "\t"+i+":\n"
+            if(this.tensors[i].form){
+                str += "\t\tform: "+String(this.tensors[i].form)+"\n"
+            }
 
             str += "\t\tinput_to:\n"
             for(let k = 0; k < this.tensors[i].input_to.length; k++){
                 str += "\t\t\t" + this.tensors[i].input_to[k] + "\n"
             }
+            
 
             str += "\t\toutput_of\n"
             str += "\t\t\t"+this.tensors[i].output_of + "\n"
@@ -268,6 +272,7 @@ class Func{
     //takes array of tensors, with forms computed
     //returns array of output forms
     calc_form(inputs, network){
+        
         var out = []
 
         switch(this.name){
@@ -320,7 +325,7 @@ class Func{
                 
                 out.push(out_form)
                 break
-            case "full":
+            case "convolution":
                 form1 = network.tensors[inputs[0]].form
                 form2 = network.tensors[inputs[1]].form
                 var out_form = []
