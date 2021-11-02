@@ -1,4 +1,4 @@
-function create_code(network){
+function create_function_code(network){
 
     network.expand()
 
@@ -17,11 +17,6 @@ function create_code(network){
 
     while(computed_tensors.length != 0){
         var no_computation = true
-
-        console.log("ORDERED OPERATORS\n");
-        console.log(ordered_operators)
-        console.log("COMPUTED TENSORS\n")
-        console.log(computed_tensors)
 
         //find operators which can now be computed
         for(let i = 0; i < network.operators.length; i++){
@@ -44,9 +39,9 @@ function create_code(network){
 
                     ordered_operators.push(i)
 
-                    console.log("calculating operator " + i)
+                    
                     out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
-                    console.log("out_forms " + out_forms)
+                    
                     for(let k = 0; k < network.operators[i].outputs.length; k++){
                         computed_tensors.push(network.operators[i].outputs[k])
 
@@ -342,3 +337,10 @@ function create_code(network){
     code += "}\n"
     return code
 }
+
+function create_derivative_code(network){
+    code = ""
+
+    return code
+}
+

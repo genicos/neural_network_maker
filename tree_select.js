@@ -96,7 +96,8 @@ op.outputs = [6]
 op.network = classifyer2
 conv2classifyer2.add_operator(op)
 
-conv2classifyer2.input_tensors = [0,1,2,4,5]
+conv2classifyer2.input_tensors = [0]
+conv2classifyer2.param_tensors = [1,2,4,5]
 conv2classifyer2.output_tensors = [6]
 
 
@@ -157,7 +158,7 @@ fulladder.output_tensors = [6]
 
 console.log(fulladder.to_string())
 
-console.log(create_code(fulladder))
+console.log(create_function_code(fulladder))
 
 
 console.log("\n\nCONV2CLASSIFYER2\n\n")
@@ -169,5 +170,5 @@ conv2classifyer2.tensors[4].form = [576,18]
 conv2classifyer2.tensors[5].form = [18,10]
 
 console.log(conv2classifyer2.to_string())
-console.log(create_code(conv2classifyer2))
+console.log(create_function_code(conv2classifyer2))
 

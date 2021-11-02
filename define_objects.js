@@ -53,6 +53,10 @@ class Network{
     expand(){
         //assumes that network is alright, ok, and doin well
         //inner networks should never have parameter nodes (ok actually they should, but hold on, please just let me sleep)
+        //  maybe they shouldn't? people may for example use the filter of convolution as an input instead
+        //  of a parameter, so why not let them. 
+        //  nothing is inherintly a parameter unless the outer layer tells it to be
+
         
         
         for(let i = 0; i < this.operators.length; i++){
@@ -207,7 +211,7 @@ class Network{
 
 class Tensor{
     constructor(live, form) {
-        this.scalar = false
+        this.scalar = false //I dont think I ever use this, i just check if this.size == 1
 
         // this code is hilarious, and it works \/
         if (live)
@@ -248,6 +252,7 @@ class Operator{
     constructor(func){
         this.inputs = []
         this.outputs = []
+
 
         this.func = func
         this.size = null
