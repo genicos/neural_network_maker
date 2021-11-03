@@ -11,6 +11,7 @@ var width = canvas.width;
 var height = canvas.height;
 
 const tensorRadius = 10
+const scalarTensorRadius = 5
 const defaultFunctionLength = 50
 const unmergeDist = 20
 
@@ -64,8 +65,13 @@ networks[0].tensors[6].y = 350
 let op1 = new Operator()
 op1.inputs = [4, 5]
 op1.outputs = [3]
-op1.func = 5 
+op1.func = 2
 networks[0].add_operator(op1)
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[7].x = 400
+networks[0].tensors[7].y = 400
+networks[0].tensors[7].scalar = true
 
 function init() {
     last_frame = Date.now()
@@ -100,7 +106,12 @@ function drawTensor(network, tensorIndex) {
     }
 
     ctx.beginPath()
-    ctx.rect(t.x - tensorRadius, t.y - tensorRadius, 2 * tensorRadius, 2 * tensorRadius)
+    if (t.scalar) {
+        ctx.rect(t.x - scalarTensorRadius, t.y - scalarTensorRadius, 2 * scalarTensorRadius, 2 * scalarTensorRadius)
+    }
+    else {
+        ctx.rect(t.x - tensorRadius, t.y - tensorRadius, 2 * tensorRadius, 2 * tensorRadius)
+    }
     ctx.fill()
     ctx.stroke()
 }
@@ -110,6 +121,15 @@ function drawTensor(network, tensorIndex) {
 
 function drawOperator(network, operatorIndex) {
     let o = network.operators[operatorIndex]
+    let input1
+    let input2
+    let output
+
+    let functionGradient = ctx.createLinearGradient(0, 0, width, height)
+    functionGradient.addColorStop(0, "#DE7521")
+    functionGradient.addColorStop(1, "#218ADE")
+
+    ctx.fillStyle = functionGradient
 
     switch (o.func) {
         case 0: // abstraction
@@ -117,26 +137,44 @@ function drawOperator(network, operatorIndex) {
         case 1: // identity
             break
         case 2: // add
+            input1 = network.tensors[o.inputs[0]]
+            input2 = network.tensors[o.inputs[1]]
+            output = network.tensors[o.outputs[0]]
+
+            ctx.beginPath()
+            ctx.moveTo(output.x - tensorRadius, output.y - tensorRadius)
+            ctx.lineTo(output.x - tensorRadius, output.y + tensorRadius)
+
+            ctx.lineTo(input1.x + tensorRadius, input1.y + tensorRadius)
+            ctx.lineTo(input1.x + tensorRadius, input1.y - tensorRadius)
+            ctx.closePath()
+            ctx.fill()
+
+            ctx.beginPath()
+            ctx.moveTo(output.x - tensorRadius, output.y - tensorRadius)
+            ctx.lineTo(output.x - tensorRadius, output.y + tensorRadius)
+
+            ctx.lineTo(input2.x + tensorRadius, input2.y + tensorRadius)
+            ctx.lineTo(input2.x + tensorRadius, input2.y - tensorRadius)
+            ctx.closePath()
+            ctx.fill()
+
+
             break
         case 3: // subtract
-            var input1 = network.tensors[o.inputs[0]]
-            var input2 = network.tensors[o.inputs[1]]
-            var output = network.tensors[o.outputs[0]]
+            input1 = network.tensors[o.inputs[0]]
+            input2 = network.tensors[o.inputs[1]]
+            output = network.tensors[o.outputs[0]]
 
 
             break
         case 4: // scale
             break
         case 5: // full
-            var input1 = network.tensors[o.inputs[0]]
-            var input2 = network.tensors[o.inputs[1]]
-            var output = network.tensors[o.outputs[0]]
+            input1 = network.tensors[o.inputs[0]]
+            input2 = network.tensors[o.inputs[1]]
+            output = network.tensors[o.outputs[0]]
 
-            var functionGradient = ctx.createLinearGradient(output.x, output.y, output.x, output.y - defaultFunctionLength / 2)
-            functionGradient.addColorStop(0, "#4D8DB2")
-            functionGradient.addColorStop(1, "#4D5BB2")
-
-            ctx.fillStyle = functionGradient
             ctx.beginPath()
             ctx.moveTo(output.x - tensorRadius, output.y - tensorRadius)
             ctx.lineTo(output.x - tensorRadius, output.y + tensorRadius)
