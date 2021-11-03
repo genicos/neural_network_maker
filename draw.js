@@ -10,8 +10,9 @@ canvas.height = canvas.getBoundingClientRect().height
 var width = canvas.width;
 var height = canvas.height;
 
-var tensorRadius = 10
-var defaultFunctionLength = 50
+const tensorRadius = 10
+const defaultFunctionLength = 50
+const unmergeDist = 20
 
 var down = false
 var draggedIndex = -1
@@ -55,6 +56,10 @@ networks[0].tensors[4].y = 200
 networks[0].add_tensor(new Tensor(true))
 networks[0].tensors[5].x = 350
 networks[0].tensors[5].y = 150
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[6].x = 350
+networks[0].tensors[6].y = 350
 
 let op1 = new Operator()
 op1.inputs = [4, 5]
@@ -114,13 +119,18 @@ function drawOperator(network, operatorIndex) {
         case 2: // add
             break
         case 3: // subtract
+            var input1 = network.tensors[o.inputs[0]]
+            var input2 = network.tensors[o.inputs[1]]
+            var output = network.tensors[o.outputs[0]]
+
+
             break
         case 4: // scale
             break
         case 5: // full
-            let input1 = network.tensors[o.inputs[0]]
-            let input2 = network.tensors[o.inputs[1]]
-            let output = network.tensors[o.outputs[0]]
+            var input1 = network.tensors[o.inputs[0]]
+            var input2 = network.tensors[o.inputs[1]]
+            var output = network.tensors[o.outputs[0]]
 
             var functionGradient = ctx.createLinearGradient(output.x, output.y, output.x, output.y - defaultFunctionLength / 2)
             functionGradient.addColorStop(0, "#4D8DB2")
@@ -207,11 +217,16 @@ function doDoubleClick(e) {
     let clickedList = getHoveredTensorIndices()
     console.log("Clicked Indices ", clickedList)
 
-    clickedList.forEach(i => networks[networkIndex].tensors[i].live )
-
     for (let i = 0; i < clickedList.length; i++) {
         clickedIndex = clickedList[i]
-        networks[networkIndex].tensors[clickedIndex].live = !networks[networkIndex].tensors[clickedIndex].live
+        t0 = networks[networkIndex].tensors[clickedIndex]
+        if (t0.output_of == null || t0.input_to.length == 0) {
+            t0.live = !t0.live
+        }
+        else {
+            console.log("Unmerge this mfr")
+            unmergeTensor(clickedIndex)
+        }
     }
 }
 
@@ -227,7 +242,42 @@ function doMouseUp(e) {
     }
 }
 
+function unmergeTensor(t0ind) {
+    t0 = networks[networkIndex].tensors[t0ind]
+
+    // Save function we are inputting to, and delete that shit
+    functions = t0.input_to
+    t0.input_to = []
+
+    console.log("Functions ", functions)
+
+    for (let i = 0; i < functions.length; i++) {
+        fi = functions[i]
+        op1 = networks[networkIndex].operators[fi]
+
+        // create new tensor
+        tnewind = networks[0].tensors.length
+        networks[0].add_tensor(new Tensor(true))
+        
+        todeleteind = op1.inputs.findIndex((elem) => elem == t0ind)
+        op1.inputs[todeleteind] = tnewind
+
+        // update position
+        networks[0].tensors[tnewind].x = t0.x + unmergeDist
+        networks[0].tensors[tnewind].y = t0.y
+
+        networks[0].tensors[tnewind].input_to = [fi]
+        networks[0].tensors[tnewind].output_of = null
+        networks[0].tensors[tnewind].live = false
+    }
+
+    t0.x -= unmergeDist
+    t0.live = false
+
+}
+
 function mergeTensors(cind0, cind1) {
+
     if (networks[networkIndex].tensors[cind0].live && networks[networkIndex].tensors[cind1].live) {
         console.log("Both merged tensors are live, so don't do anything.")
         return
@@ -237,14 +287,18 @@ function mergeTensors(cind0, cind1) {
     let t1 = networks[networkIndex].tensors[cind1]
 
     let toDeleteIndex = cind1  // ugh this this uggo, but so is not using t0 and t1
+    let noDeleteIndex = cind0 
+
+    console.log("Poopoo ", t0.output_of, t1.output_of)
 
     // t0 is already an output to a function and stays, t1 is an input to a function and is deleted
     if (t0.output_of != null && t1.output_of == null) {}
-    else if (t1.output_of == null && t0.output_of != null) {
+    else if (t1.output_of != null && t0.output_of == null) {
         tmp = t1
         t1 = t0
         t0 = tmp
         toDeleteIndex = cind0
+        noDeleteIndex = cind1
     }
     else {
         console.log("Error merging, only one input must have an output")
@@ -258,8 +312,8 @@ function mergeTensors(cind0, cind1) {
         return
     }
     
-    let ind = networks[networkIndex].operators[t1.input_to].inputs.indexOf(cind1)
-    networks[networkIndex].operators[t1.input_to].inputs[ind] = cind0
+    let ind = networks[networkIndex].operators[t1.input_to].inputs.indexOf(toDeleteIndex)
+    networks[networkIndex].operators[t1.input_to].inputs[ind] = noDeleteIndex
 
     t0.input_to = t1.input_to
     t0.live = true 
