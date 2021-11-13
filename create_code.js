@@ -338,9 +338,173 @@ function create_function_code(network){
     return code
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+/*
 function create_derivative_code(network){
     code = ""
 
+    network.expand()
+
+    //threads running from parameters to loss tensor
+    parameter_threads = []
+
+    for(let i = 0; i < network.param_tensors.length; i++){
+        parameter_threads.push([network.param_tensors[i]])
+    }
+
+    for(let i = 0; i < parameter_threads.length; i++){
+        last_tensor_in_thread = network.tensors[parameter_threads[i][parameter_threads[i].length - 1]]
+        for(let j = 0; j < last_tensor_in_thread.inputs_to.length; j++){
+            input_to_operator = network.operators[last_tensor_in_thread.inputs_to[j]]
+            
+            if(j == 0){
+                //use existing thread for operator 0 output 0
+                parameter_threads[i].push(input_to_operator.outputs[0])
+
+                for(let k = 1; k < input_to_operator.outputs.length; k++){
+                    parameter_threads.push(parameter_threads[i])
+                    parameter_threads[parameter_threads.length - 1].push(input_to_operator.outputs[k])
+                }
+            }else{
+                for(let k = 0; k < input_to_operator.outputs.length; k++){
+                    parameter_threads.push(parameter_threads[i])
+                    parameter_threads[parameter_threads.length - 1].push(input_to_operator.outputs[k])
+                }
+            }
+
+        }
+
+        if(last_tensor_in_thread.inputs_to.length == 0){
+            parameter_threads.splice(i, 1)
+            i--
+        }
+    }
+
     return code
 }
+*/
 
+
+//Holds information on what needs to be calculated for a particular operator
+class operator_handle{
+    operator(index, partials, evaluate, out_partial){
+        this.index = index       //operators index in network
+        this.partials = partials //list of booleans, if true, this input needs partial calculated
+        this.evaluate = evaluate //bool, if true, need to evaluate outputs of this operator
+        this.out_partial = out_partial //bool, true if one of partials is true
+    }
+}
+
+
+
+function create_derivative_code(network){
+
+    network.expand()
+
+    code = ""
+    code += "#include <float.h>\n"
+    code += "#include <inttypes.h>\n\n"
+
+    //First, we determine an order of operators that causes no dependency hazards
+    //and we determine if we need to calculate the partial derivatives, and if we need to evaluate
+    var ordered_operators = []
+    var operator_handles = []
+    for(let i = 0; i < network.operators.length; i++){
+        operator_handles.push(operator_handle(i,[],false, false))
+    }
+    var computed_tensors = network.input_tensors.concat(network.truth_tensors, network.param_tensors)
+
+
+
+
+
+    while(computed_tensors.length != 0){
+        var no_computation = true
+
+        //find operators which can now be computed
+        for(let i = 0; i < network.operators.length; i++){
+
+            //only check operators we have not already computed
+            if(!ordered_operators.includes(i)){
+                var all_inputs_are_computed = true
+
+                //check if all inputs have been computed
+                for(let k = 0; k < network.operators[i].inputs.length; k++){
+                    if(!computed_tensors.includes(network.operators[i].inputs[k])){
+                        all_inputs_are_computed = false
+                    }
+                }
+
+                //if all inputs have been computed, then the operator may be computed
+                // and all of the operators outputs can be computed
+                if(all_inputs_are_computed){
+                    no_computation = false
+
+                    ordered_operators.push(i)
+                    
+
+                    //Finding out which inputs need a partial derivative
+                    var partials = []
+                    var out_partial = false
+
+                    for(let k = 0; k < network.operators[i].inputs.length; k++){
+                        var this_tensor = network.operators[i].inputs[k]
+
+                        //this feels ugly
+                        if(network.param_tensors.includes(this_tensor)){
+                            partials.push(true)
+                            out_partial = true
+                        }else if(network.tensors[this_tensor].output_of != null){
+                            if(operator_handles[network.tensors[this_tensor].output_of].out_partial){
+                                partials.push(true)
+                                out_partial = true
+                            }else{
+                                partials.push(false)
+                            }
+                        }else{
+                            partials.push(false)
+                        }
+
+                    }
+
+                    var evaluate = (network.loss != network.operators[i].outputs[0])
+                    operator_handles[i].partials = partials
+                    operator_handles[i].evaluate = evaluate
+                    operator_handles[i].out_partial = out_partial
+                    
+
+                    
+                    out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
+                    
+                    for(let k = 0; k < network.operators[i].outputs.length; k++){
+                        computed_tensors.push(network.operators[i].outputs[k])
+
+
+                        network.tensors[network.operators[i].outputs[k]].form = out_forms[k]
+                    }
+                }
+            }
+        }
+
+        if(computed_tensors.length == network.tensors.length){
+            break
+        }else if(no_computation){
+            //If we can perform no more computations, and we have not computed every tensor
+            // then the network is ill-formed
+            return false;
+        }
+    }
+
+
+}

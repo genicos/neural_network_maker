@@ -7,6 +7,8 @@ class Network{
         this.input_tensors = []
         this.param_tensors = []
         this.output_tensors = []
+        this.truth_tensors = []
+        this.loss = null
     }
 
     add_tensor(t){
