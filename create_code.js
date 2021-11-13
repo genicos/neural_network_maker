@@ -119,6 +119,7 @@ function create_function_code(network){
             code += "        t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+"[i];\n"
             code += "    }\n"
         }
+
         if(this_op.func == 4){
             code += "    // Operator "+ ordered_operators[i] + ", tensor scale\n"
             code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
@@ -195,7 +196,7 @@ function create_function_code(network){
             code += "    }\n"
         }
 
-        //convolution, this one will be difficult
+        
         if(this_op.func == 10){
 
             output_form_cascade = []
@@ -327,7 +328,7 @@ function create_function_code(network){
             code += "    t"+this_op.outputs[0]+treatment+" = 0;\n"
             code += "    float temp"+ordered_operators[i]+";\n"
             code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "        float temp"+ordered_operators[i]+" = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+";\n"
+            code += "        temp"+ordered_operators[i]+" = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+";\n"
             code += "        t"+this_op.outputs[0]+treatment+" += temp"+ordered_operators[i]+" * temp"+ordered_operators[i]+";\n"
             code += "    }\n"
         }
@@ -407,7 +408,7 @@ class operator_handle{
 }
 
 
-
+//This code currently assumes one ouput per operator, which may change in the future
 function create_derivative_code(network){
 
     network.expand()
@@ -421,7 +422,7 @@ function create_derivative_code(network){
     var ordered_operators = []
     var operator_handles = []
     for(let i = 0; i < network.operators.length; i++){
-        operator_handles.push(operator_handle(i,[],false, false))
+        operator_handles.push(new operator_handle(i,[],false, false))
     }
     var computed_tensors = network.input_tensors.concat(network.truth_tensors, network.param_tensors)
 
@@ -482,7 +483,7 @@ function create_derivative_code(network){
                     operator_handles[i].partials = partials
                     operator_handles[i].evaluate = evaluate
                     operator_handles[i].out_partial = out_partial
-                    
+
 
                     
                     out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
@@ -506,5 +507,157 @@ function create_derivative_code(network){
         }
     }
 
+    for(let i = 0; i < operator_handles.length; i++){
+        console.log("AAAA\n")
+        console.log(i + "\n")
+        console.log(operator_handles[i].partials)
+        console.log(operator_handles[i].evaluate)
+        console.log(operator_handles[i].out_partial)
+    }
 
+
+    code += "void network_descend(){\n"
+
+    for(let i = 0; i < network.tensors.length; i++){
+
+        if(!network.input_tensors.includes(i) && !network.output_tensors.includes(i)){
+            network.tensors[i].calc_size()
+            if(network.tensors[i].size == 0){
+
+            }else if(network.tensors[i].size == 1){
+                code += "    float t"+String(i)+ ";\n"
+            }else{
+                code += "    float t"+String(i)+ "["+String(network.tensors[i].size)+"];\n"
+            }
+        }
+    }
+
+    for(let i = 0; i < network.operators.length; i++){
+        for(let j = 0; j < operator_handles[i].partials.length; j++){
+            if(operator_handles[i].partials[j]){
+                var partial_size = network.tensors[network.operators[i].outputs[0]].size * network.tensors[network.operators[i].inputs[j]].size
+                if(partial_size == 0){
+
+                }else if(partial_size == 1){
+                    code += "    float d"+String(network.operators[i].outputs[0])+"d"+String(network.operators[i].inputs[j]) +";\n"
+                }else{
+                    code += "    float d"+String(network.operators[i].outputs[0])+"d"+String(network.operators[i].inputs[j]) + "["+partial_size+"];\n"
+                }
+            }
+        }
+    }
+
+    for(let i = 0; i < ordered_operators.length;i++){
+        var this_op = network.operators[ordered_operators[i]]
+        var this_handle = operator_handles[ordered_operators[i]]
+        code += "    \n"
+
+        if(this_op.func == 2){
+            code += "    // Operator "+ ordered_operators[i] + ", tensor addition\n"
+            if(this_handle.evaluate){
+                code += "    // evaluation\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+                code += "        t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] + t"+this_op.inputs[1]+"[i];\n"
+                code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size * network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                if(this_handle.partials[0]){
+                    code += "        d"+this_op.outputs[0]+"d"+this_op.inputs[0] + "[i] = 1;\n"
+                }
+                if(this_handle.partials[1]){
+                    code += "        d"+this_op.outputs[0]+"d"+this_op.inputs[1] + "[i] = 1;\n"
+                }
+                code += "    }\n"
+            }
+        }
+
+        if(this_op.func == 3){
+            code += "    // Operator "+ ordered_operators[i] + ", tensor subtraction\n"
+            if(this_handle.evaluate){
+                code += "    // evaluation\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+                code += "        t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] - t"+this_op.inputs[1]+"[i];\n"
+                code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size * network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                if(this_handle.partials[0]){
+                    code += "        d"+this_op.outputs[0]+"d"+this_op.inputs[0] + "[i] = 1;\n"
+                }
+                if(this_handle.partials[1]){
+                    code += "        d"+this_op.outputs[0]+"d"+this_op.inputs[1] + "[i] = -1;\n"
+                }
+                code += "    }\n"
+            }
+        }
+    }
+
+
+
+
+
+    parameter_threads = []
+    running_threads = []
+
+    for(let i = 0; i < network.param_tensors.length; i++){
+        running_threads.push([network.param_tensors[i]])
+    }
+
+    var i = 0; 
+    console.log("A")
+    while(running_threads.length > 0){
+        if( i >= running_threads.length){
+            i = 0
+        }
+        console.log(i)
+        for(let j = 0; j < running_threads[i].length; j++){
+            console.log("GG "+running_threads[i][j])
+        }
+
+        last_tensor_in_thread = network.tensors[running_threads[i][running_threads[i].length - 1]]
+        
+        if(network.loss == running_threads[i][running_threads[i].length - 1]){
+            parameter_threads.push(running_threads[i])
+            running_threads.splice(i, 1)
+            continue
+        }
+
+        for(let j = 0; j < last_tensor_in_thread.input_to.length; j++){
+            input_to_operator = network.operators[last_tensor_in_thread.input_to[j]]
+            
+            if(j == 0){
+                //use existing thread for operator 0 output 0
+                running_threads[i].push(input_to_operator.outputs[0])
+
+                for(let k = 1; k < input_to_operator.outputs.length; k++){
+                    running_threads.push([...running_threads[i]])
+                    running_threads[running_threads.length - 1].push(input_to_operator.outputs[k])
+                }
+            }else{
+                for(let k = 0; k < input_to_operator.outputs.length; k++){
+                    running_threads.push([...running_threads[i]])
+                    running_threads[running_threads.length - 1].push(input_to_operator.outputs[k])
+                }
+            }
+
+        }
+
+        if(last_tensor_in_thread.input_to.length == 0){
+            running_threads.splice(i, 1)
+            continue
+        }
+
+        i++
+    }
+
+    console.log(parameter_threads)
+    for(let i = 0; i < parameter_threads.length; i++){
+        console.log(parameter_threads[i])
+    }
+
+    code += "}\n"
+    return code
 }

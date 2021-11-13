@@ -172,3 +172,62 @@ conv2classifyer2.tensors[5].form = [18,10]
 console.log(conv2classifyer2.to_string())
 console.log(create_function_code(conv2classifyer2))
 
+
+
+
+
+
+
+var derivativer = new Network()
+
+derivativer.add_tensor(new Tensor(true,shared_form)) //0
+derivativer.add_tensor(new Tensor(true)) //1
+derivativer.add_tensor(new Tensor(true)) //2
+derivativer.add_tensor(new Tensor(true)) //3
+derivativer.add_tensor(new Tensor(true)) //4
+derivativer.add_tensor(new Tensor(true,shared_form)) //5
+derivativer.add_tensor(new Tensor(true,shared_form)) //6
+derivativer.add_tensor(new Tensor(true,shared_form)) //7
+derivativer.add_tensor(new Tensor(true)) //8
+derivativer.add_tensor(new Tensor(true,shared_form)) //9
+derivativer.add_tensor(new Tensor(true,shared_form)) //10
+derivativer.add_tensor(new Tensor(true)) //11
+
+
+op = new Operator(2)
+op.inputs = [0,1]
+op.outputs = [11]
+derivativer.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [2,3]
+op.outputs = [1]
+derivativer.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [7,4]
+op.outputs = [2]
+derivativer.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [4,8]
+op.outputs = [3]
+derivativer.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [10,9]
+op.outputs = [8]
+derivativer.add_operator(op)
+
+op = new Operator(2)
+op.inputs = [6,5]
+op.outputs = [4]
+derivativer.add_operator(op)
+
+derivativer.loss = 11
+derivativer.param_tensors = [5,6,7]
+derivativer.truth_tensors = [0]
+derivativer.input_tensors = [9,10]
+
+console.log(derivativer.to_string())
+console.log(create_derivative_code(derivativer))
