@@ -229,5 +229,8 @@ derivativer.param_tensors = [5,6,7]
 derivativer.truth_tensors = [0]
 derivativer.input_tensors = [9,10]
 
+derivative_string = create_derivative_code(derivativer)
+/*
 console.log(derivativer.to_string())
-console.log(create_derivative_code(derivativer))
+console.log(derivative_string)
+*/

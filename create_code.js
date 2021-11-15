@@ -408,6 +408,9 @@ class operator_handle{
 }
 
 
+
+
+
 //This code currently assumes one ouput per operator, which may change in the future
 function create_derivative_code(network){
 
@@ -631,6 +634,105 @@ function create_derivative_code(network){
     for(let i = 0; i < parameter_threads.length; i++){
         console.log(parameter_threads[i])
     }
+
+
+
+    //What if i pass 
+    //  0,1,2
+    //  0,2
+    //?????oh man
+    //
+    //if path is undefined, do normal naming conventions
+    //if path is a number, append number to name
+    function chain_rule(threads, path){
+        var code = ""
+
+        if(threads.length == 1){
+            //base case
+            if(threads[0].length <= 2){
+                return code
+            }
+
+            for(let i = 1; i < threads[0].length; i++){
+                if(typeof path === 'undefined' ){
+                    code += "    float d"+thread[0][0]+"d"+thread[0][i]+"["+(network.tensors[thread[0][0]].size * network.tensors[thread[0][i]].size)+"];"
+                }else{
+                    code += "    float d"+thread[0][0]+"d"+thread[0][i]+"_path"+path+"["+(network.tensors[thread[0][0]].size * network.tensors[thread[0][i]].size)+"];"
+                }
+                //TODO
+                code += "    for(uint32_t i"
+            }
+        }
+
+        var multi_path = true
+
+        //A multi_path requires that all threads have the same
+        // first element and the same last element
+        var first_element = threads[0][0]
+        var last_element = threads[0][threads[0].length - 1]
+        for(let i = 1; multi_path && i < threads.length; i++){
+            if(threads[i][0] != first_element){
+                multi_path = false
+            }
+            if(threads[i][threads[i].length -1] != last_element){
+                multi_path = false
+            }
+        }
+        
+        var node_pair_table = new Object()
+
+        var max_pair = []
+        var max_value = 0;
+
+        for(let i = 0; i < threads.length; i++){
+            for(let j = 0; j < threads[i].length; j++){
+
+                //do not check first and last if multi_path is true
+                var top_to_check = (multi_path && j == 0)? threads[i].length - 1 : threads[i].length;
+
+                for(let k = j+2; k < top_to_check; k++){
+                    var t1 = threads[i][j]
+                    var t2 = threads[i][k]
+                    if([t1,t2] in node_pair_table){
+                        node_pair_table[[t1,t2]] = node_pair_table[[t1,t2]] + 1
+                    }else{
+                        node_pair_table[[t1,t2]] = 1
+                    }
+                    if(node_pair_table[[t1,t2]] > max_value){
+                        max_pair = [t1,t2]
+                        max_value = node_pair_table[[t1,t2]]
+                    }
+                }
+            }
+        }
+
+        
+        
+        //TODO
+        console.log(multi_path)
+        console.log(node_pair_table)
+        console.log(max_pair)
+        console.log(max_value)
+
+    }
+
+
+    chain_rule(parameter_threads)
+
+    var example = []
+
+
+    example = []
+    example.push([0,1,2,3])
+    example.push([0,4,5,3])
+    example.push([0,6,3])
+    chain_rule(example)
+
+    example = []
+    example.push([0,1,2,3])
+    example.push([0,4,1,5,3])
+    example.push([0,6,3])
+    chain_rule(example)
 
     code += "}\n"
     return code
