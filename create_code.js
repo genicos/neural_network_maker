@@ -348,53 +348,18 @@ function create_function_code(network){
 
 
 
-
-
-
-/*
-function create_derivative_code(network){
-    code = ""
-
-    network.expand()
-
-    //threads running from parameters to loss tensor
-    parameter_threads = []
-
-    for(let i = 0; i < network.param_tensors.length; i++){
-        parameter_threads.push([network.param_tensors[i]])
+function arraysEqual(a, b) {
+    if (a === b) return true;
+    if (a == null || b == null) return false;
+    if (a.length !== b.length) return false;
+  
+    for (var i = 0; i < a.length; ++i) {
+        if (a[i] !== b[i]) return false;
     }
-
-    for(let i = 0; i < parameter_threads.length; i++){
-        last_tensor_in_thread = network.tensors[parameter_threads[i][parameter_threads[i].length - 1]]
-        for(let j = 0; j < last_tensor_in_thread.inputs_to.length; j++){
-            input_to_operator = network.operators[last_tensor_in_thread.inputs_to[j]]
-            
-            if(j == 0){
-                //use existing thread for operator 0 output 0
-                parameter_threads[i].push(input_to_operator.outputs[0])
-
-                for(let k = 1; k < input_to_operator.outputs.length; k++){
-                    parameter_threads.push(parameter_threads[i])
-                    parameter_threads[parameter_threads.length - 1].push(input_to_operator.outputs[k])
-                }
-            }else{
-                for(let k = 0; k < input_to_operator.outputs.length; k++){
-                    parameter_threads.push(parameter_threads[i])
-                    parameter_threads[parameter_threads.length - 1].push(input_to_operator.outputs[k])
-                }
-            }
-
-        }
-
-        if(last_tensor_in_thread.inputs_to.length == 0){
-            parameter_threads.splice(i, 1)
-            i--
-        }
-    }
-
-    return code
+    return true;
 }
-*/
+
+
 
 
 //Holds information on what needs to be calculated for a particular operator
@@ -590,10 +555,19 @@ function create_derivative_code(network){
                 code += "    }\n"
             }
         }
+
+        if(this_op.func == 4){
+            code += "    // Operator "+ ordered_operators[i] + ", tensor scale\n"
+            if(this_handle.evaluate){
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
+                code += "        t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * t"+this_op.inputs[1]+";\n"
+                code += "    }\n"
+            }
+        }
     }
 
 
-
+    code += "    \n"
 
 
     parameter_threads = []
@@ -637,13 +611,21 @@ function create_derivative_code(network){
 
 
 
+
+
+
+
+
     //What if i pass 
     //  0,1,2
     //  0,2
-    //?????oh man
+    //?????oh man Call this the ADJACENCY PROBLEM
     //
     //if path is undefined, do normal naming conventions
     //if path is a number, append number to name
+    //
+    //I assume max_pair would only appear in a single thread once
+    // (Is this a safe assumption???)
     function chain_rule(threads, path){
         var code = ""
 
@@ -653,15 +635,33 @@ function create_derivative_code(network){
                 return code
             }
 
-            for(let i = 1; i < threads[0].length; i++){
-                if(typeof path === 'undefined' ){
-                    code += "    float d"+thread[0][0]+"d"+thread[0][i]+"["+(network.tensors[thread[0][0]].size * network.tensors[thread[0][i]].size)+"];"
+            for(let i = 2; i < threads[0].length; i++){
+                code += "    // chain rule\n"
+                if(typeof path !== 'undefined' && i == threads[0].length - 1){
+                    code += "    float d"+threads[0][0]+"d"+threads[0][i]+"_path"+path+"["+(network.tensors[threads[0][0]].size +"]["+ network.tensors[threads[0][i]].size)+"];\n"
                 }else{
-                    code += "    float d"+thread[0][0]+"d"+thread[0][i]+"_path"+path+"["+(network.tensors[thread[0][0]].size * network.tensors[thread[0][i]].size)+"];"
+                    code += "    float d"+threads[0][0]+"d"+threads[0][i]+"["+network.tensors[threads[0][0]].size +"]["+ network.tensors[threads[0][i]].size+"];\n"
                 }
-                //TODO
-                code += "    for(uint32_t i"
+                
+                code += "    for(uint32_t i = 0; i < " + network.tensors[threads[0][0]].size + "; i++){\n"
+                code += "        for(uint32_t k = 0; k < " + network.tensors[threads[0][i]].size + "; k++){\n"
+                code += "            float sum = 0;\n"
+                code += "            for(uint32_t j = 0; j < " + network.tensors[threads[0][i-1]].size + "; j++){\n"
+                code += "                sum += d"+threads[0][0]+"d"+threads[0][i-1]+"[i][j] * d"+threads[0][i-1]+"d"+threads[0][i]+"[j][k];\n"
+                code += "            }\n"
+
+                if(typeof path !== 'undefined' && i == threads[0].length - 1){
+                    code += "            d"+threads[0][0]+"d"+threads[0][i]+"_path"+path+"[i][k]"
+                }else{
+                    code += "            d"+threads[0][0]+"d"+threads[0][i]+"[i][k]"
+                }
+                code += " = sum\n"
+                code += "        }\n"
+                code += "    }\n"
+                code += "\n"
             }
+            
+            return code
         }
 
         var multi_path = true
@@ -685,7 +685,7 @@ function create_derivative_code(network){
         var max_value = 0;
 
         for(let i = 0; i < threads.length; i++){
-            for(let j = 0; j < threads[i].length; j++){
+            for(let j = 0; j < threads[i].length - 2; j++){
 
                 //do not check first and last if multi_path is true
                 var top_to_check = (multi_path && j == 0)? threads[i].length - 1 : threads[i].length;
@@ -707,32 +707,106 @@ function create_derivative_code(network){
         }
 
         
+        //In this case, we recurse with a multipath
+        if(max_value > 1){
+
+            var new_threads = []
+            var multi_path_threads = []
+
+            for(let i = 0; i < threads.length; i++){
+
+                var potential_thread = []
+
+                for(let j = 0; j < threads[i].length - 2; j++){
+                    
+                    if(threads[i][j] == max_pair[0]){
+
+                        
+                        //ADJACENCY PROBLEM is relevent here
+                        for(let k = j; k < threads[i].length; k++){
+                            
+                            potential_thread.push(threads[i][k])
+                            if(threads[i][k] == max_pair[1]){
+
+                                //Dont add repeats
+                                var repeated = false
+                                for(let h = 0; h < multi_path_threads.length; h++){
+                                    if(arraysEqual(multi_path_threads[h],potential_thread)){
+                                        repeated = true
+                                    }
+                                }
+                                if(!repeated){
+                                    multi_path_threads.push(potential_thread)
+                                }
+
+                                var trimmed_thread = []
+                                for(let h = 0; h < threads[i].length; h++){
+                                    if(h <= j || h >= k){
+                                        trimmed_thread.push(threads[i][h])
+                                    }
+                                }
+                                repeated = false
+                                for(let h = 0; h < new_threads.length; h++){
+                                    if(arraysEqual(new_threads[h],trimmed_thread)){
+                                        repeated = true
+                                    }
+                                }
+                                if(!repeated){
+                                    new_threads.push(trimmed_thread)
+                                }
+                                
+                                break
+                            }
+                        }
+                        break
+                    }
+
+                }
+
+            }
+
+            code += chain_rule(multi_path_threads)
+            code += chain_rule(new_threads)
+
+            return code
+        }
+
+        //multi_path with no inner multi paths
+        if(multi_path){
+            for(let i = 0; i < threads.length; i++){
+                code += chain_rule([threads[i]], i)
+            }
+
+            //sum them together
+            code += "    float d"+first_element+"d"+last_element+"["+network.tensors[first_element].size +"]["+ network.tensors[last_element].size+"];\n"
+            code += "    for(uint32_t i = 0; i < "+network.tensors[first_element]+"; i++){\n"
+            code += "        for(uint32_t j = 0; j < "+network.tensors[last_element]+"; j++){\n"
+            code += "            d"+first_element+"d"+last_element+"[i][j] = d"+first_element+"d"+last_element+"_path0[i][j];\n" 
+            for(let i = 1; i < threads.length; i++){
+                code += "            d"+first_element+"d"+last_element+"[i][j] += d"+first_element+"d"+last_element+"_path"+i+"[i][j];\n"
+            }
+            code += "        }\n"
+            code += "    }\n"
+            code += "    \n"
+            return code
+        }
+
+        for(let i = 0; i < threads.length; i++){
+            code += chain_rule([threads[i]])
+        }
+
+
         
         //TODO
         console.log(multi_path)
         console.log(node_pair_table)
-        console.log(max_pair)
-        console.log(max_value)
-
+        return code
     }
 
 
-    chain_rule(parameter_threads)
-
-    var example = []
+    code += chain_rule(parameter_threads)
 
 
-    example = []
-    example.push([0,1,2,3])
-    example.push([0,4,5,3])
-    example.push([0,6,3])
-    chain_rule(example)
-
-    example = []
-    example.push([0,1,2,3])
-    example.push([0,4,1,5,3])
-    example.push([0,6,3])
-    chain_rule(example)
 
     code += "}\n"
     return code
