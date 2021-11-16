@@ -556,12 +556,24 @@ function create_derivative_code(network){
             }
         }
 
-        if(this_op.func == 4){
-            code += "    // Operator "+ ordered_operators[i] + ", tensor scale\n"
+        if(this_op.func == 5){
+            code += "    // Operator "+ ordered_operators[i] + ", fully connected layer\n"
             if(this_handle.evaluate){
                 code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
-                code += "        t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * t"+this_op.inputs[1]+";\n"
+                code += "        t"+this_op.outputs[0] +"[i] = 0;\n"
+                code += "        for(uint32_t j = 0; j < " + network.tensors[this_op.inputs[0]].size + "; j++){\n"
+                code += "            t"+this_op.outputs[0] +"[i] += t"+this_op.inputs[0] +"[j] * t"+this_op.inputs[1] +"[i*"+network.tensors[this_op.inputs[0]].size+" + j];\n"
+                code += "        }\n"
                 code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                if(this_handle.partials[0]){
+                    code += "    d"+this_op.outputs[0]+"d"+this_op.inputs[0]+" = t"+this_op.inputs[1]+";\n"
+                }
+                if(this_handle.partials[1]){
+                    
+                }
             }
         }
     }
