@@ -512,6 +512,12 @@ function create_derivative_code(network){
     for(let i = 0; i < ordered_operators.length;i++){
         var this_op = network.operators[ordered_operators[i]]
         var this_handle = operator_handles[ordered_operators[i]]
+        var output_size = network.tensors[this_op.outputs[0]].size
+        var input_0_size = network.tensors[this_op.inputs[0]].size
+        var input_1_size = 0
+        if(this_op.inputs.length > 1){
+            input_1_size = network.tensors[this_op.inputs[0]].size
+        }
         code += "    \n"
 
         if(this_op.func == 2){
@@ -569,10 +575,22 @@ function create_derivative_code(network){
             if(this_handle.out_partial){
                 code += "    // partial derivative\n"
                 if(this_handle.partials[0]){
+                    //PROBLEM: if i use in-place algorithms this may rewrite data that i need
+                    //would i use in-place for full layer tho?
                     code += "    d"+this_op.outputs[0]+"d"+this_op.inputs[0]+" = t"+this_op.inputs[1]+";\n"
                 }
                 if(this_handle.partials[1]){
-                    
+                    code += "    for(uint32_t i = 0; i < "+ output_size + "; i++){\n"
+                    code += "        for(uint32_t j = 0; j < "+ output_size + "; j++){\n"
+                    code += "            for(uint32_t k = 0; k < "+ input_0_size + " k++){\n"
+                    code += "                if(i == j){\n"
+                    code += "                    d"+this_op.outputs[0]+"d"+this_op.inputs[1] + "[i*" + (output_size*input_0_size) + " + j*"+input_0_size+" + k] = 0;\n"
+                    code += "                }else{\n"
+                    code += "                    d"+this_op.outputs[0]+"d"+this_op.inputs[1] + "[i*" + (output_size*input_0_size) + " + j*"+input_0_size+" + k] = t"+this_op.inputs[0]+"[k];\n"
+                    code += "                }\n"
+                    code += "            }\n"
+                    code += "        }\n"
+                    code += "    }\n"
                 }
             }
         }
@@ -667,7 +685,7 @@ function create_derivative_code(network){
                 }else{
                     code += "            d"+threads[0][0]+"d"+threads[0][i]+"[i][k]"
                 }
-                code += " = sum\n"
+                code += " = sum;\n"
                 code += "        }\n"
                 code += "    }\n"
                 code += "\n"
