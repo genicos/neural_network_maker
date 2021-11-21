@@ -281,6 +281,7 @@ class Func{
     calc_form(inputs, network){
         
         var out = []
+        console.log(this.name)
 
         switch(this.name){
             case "identity":
@@ -347,6 +348,22 @@ class Func{
                 }
                 
                 out.push(out_form)
+                break
+            
+            case "squared dist":
+                out.push([1])
+                break
+            
+            case "ReLU":
+                out.push(network.tensors[inputs[0]].form)
+                break
+
+            case "LeakyReLU":
+                out.push(network.tensors[inputs[0]].form)
+                break
+
+            case "Leaky to ReLU":
+                out.push(network.tensors[inputs[0]].form)
                 break
                 
 

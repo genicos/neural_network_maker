@@ -12,7 +12,7 @@ function create_function_code(network){
 
     //First, we determine an order of operators that causes no dependency hazards
     var ordered_operators = []
-    var computed_tensors = [...network.input_tensors]
+    var computed_tensors = network.input_tensors.concat(network.param_tensors)
 
 
     while(computed_tensors.length != 0){
@@ -31,7 +31,7 @@ function create_function_code(network){
                         all_inputs_are_computed = false
                     }
                 }
-
+                console.log("i:"+i)
                 //if all inputs have been computed, then the operator may be computed
                 // and all of the operators outputs can be computed
                 if(all_inputs_are_computed){
@@ -53,6 +53,7 @@ function create_function_code(network){
         }
 
         if(computed_tensors.length == network.tensors.length){
+            
             break
         }else if(no_computation){
             //If we can perform no more computations, and we have not computed every tensor
@@ -481,8 +482,10 @@ function create_derivative_code(network){
                     for(let k = 0; k < network.operators[i].outputs.length; k++){
                         computed_tensors.push(network.operators[i].outputs[k])
 
-
+                        console.log("Setting form of " + network.operators[i].outputs[k])
                         network.tensors[network.operators[i].outputs[k]].form = out_forms[k]
+                        console.log("New form: ")
+                        console.log(network.tensors[network.operators[i].outputs[k]].form)
                     }
                 }
             }
@@ -503,6 +506,7 @@ function create_derivative_code(network){
     code += "void network_descend(){\n"
 
     for(let i = 0; i < network.tensors.length; i++){
+        network.tensors[i].calc_size()
 
         if(!network.input_tensors.includes(i) && !network.output_tensors.includes(i)){
             network.tensors[i].calc_size()
@@ -519,7 +523,9 @@ function create_derivative_code(network){
     for(let i = 0; i < network.operators.length; i++){
         for(let j = 0; j < operator_handles[i].partials.length; j++){
             if(operator_handles[i].partials[j]){
+                // relevant to multiple outputs, this assumes one output
                 var partial_size = network.tensors[network.operators[i].outputs[0]].size * network.tensors[network.operators[i].inputs[j]].size
+                
                 if(partial_size == 0){
 
                 }else if(partial_size == 1){
@@ -632,7 +638,7 @@ function create_derivative_code(network){
             }
             if(this_handle.out_partial){
                 code += "    // partial derivative\n"
-                code += "    for(uint32_t i = 0; i < "+input_size+"; i++){\n"
+                code += "    for(uint32_t i = 0; i < "+input_0_size+"; i++){\n"
                 code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
                 code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 1;\n"
                 code += "        }else{\n"
@@ -656,7 +662,7 @@ function create_derivative_code(network){
             }
             if(this_handle.out_partial){
                 code += "    // partial derivative\n"
-                code += "    for(uint32_t i = 0; i < "+input_size+"; i++){\n"
+                code += "    for(uint32_t i = 0; i < "+input_0_size+"; i++){\n"
                 code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
                 code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 1;\n"
                 code += "        }else{\n"
@@ -740,22 +746,22 @@ function create_derivative_code(network){
             for(let i = 2; i < threads[0].length; i++){
                 code += "    // chain rule\n"
                 if(typeof path !== 'undefined' && i == threads[0].length - 1){
-                    code += "    float d"+threads[0][0]+"d"+threads[0][i]+"_path"+path+"["+(network.tensors[threads[0][0]].size +"]["+ network.tensors[threads[0][i]].size)+"];\n"
+                    code += "    float d"+threads[0][i]+"d"+threads[0][0]+"_path"+path+"["+(network.tensors[threads[0][i]].size +"]["+ network.tensors[threads[0][0]].size)+"];\n"
                 }else{
-                    code += "    float d"+threads[0][0]+"d"+threads[0][i]+"["+network.tensors[threads[0][0]].size +"]["+ network.tensors[threads[0][i]].size+"];\n"
+                    code += "    float d"+threads[0][i]+"d"+threads[0][0]+"["+network.tensors[threads[0][i]].size +"]["+ network.tensors[threads[0][0]].size+"];\n"
                 }
                 
-                code += "    for(uint32_t i = 0; i < " + network.tensors[threads[0][0]].size + "; i++){\n"
-                code += "        for(uint32_t k = 0; k < " + network.tensors[threads[0][i]].size + "; k++){\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[threads[0][i]].size + "; i++){\n"
+                code += "        for(uint32_t k = 0; k < " + network.tensors[threads[0][0]].size + "; k++){\n"
                 code += "            float sum = 0;\n"
                 code += "            for(uint32_t j = 0; j < " + network.tensors[threads[0][i-1]].size + "; j++){\n"
-                code += "                sum += d"+threads[0][0]+"d"+threads[0][i-1]+"[i][j] * d"+threads[0][i-1]+"d"+threads[0][i]+"[j][k];\n"
+                code += "                sum += d"+threads[0][i-1]+"d"+threads[0][0]+"[i][j] * d"+threads[0][i]+"d"+threads[0][i-1]+"[j][k];\n"
                 code += "            }\n"
 
                 if(typeof path !== 'undefined' && i == threads[0].length - 1){
-                    code += "            d"+threads[0][0]+"d"+threads[0][i]+"_path"+path+"[i][k]"
+                    code += "            d"+threads[0][i]+"d"+threads[0][0]+"_path"+path+"[i][k]"
                 }else{
-                    code += "            d"+threads[0][0]+"d"+threads[0][i]+"[i][k]"
+                    code += "            d"+threads[0][i]+"d"+threads[0][0]+"[i][k]"
                 }
                 code += " = sum;\n"
                 code += "        }\n"

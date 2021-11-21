@@ -231,5 +231,109 @@ derivativer.input_tensors = [9,10]
 
 derivative_string = create_derivative_code(derivativer)
 
+
 console.log(derivativer.to_string())
 console.log(derivative_string)
+
+
+
+
+
+
+
+
+
+
+
+
+console.log("\n\n\n\n\n\n\n\n\n\n\n\nMNIST TEST\n\n\n\n\n\n\n\n")
+
+
+var mnist = new Network()
+
+
+mnist.add_tensor(new Tensor(true, [28,28]))
+mnist.add_tensor(new Tensor(true, [18,784]))
+mnist.add_tensor(new Tensor(true))
+
+mnist.add_tensor(new Tensor(true))
+mnist.add_tensor(new Tensor(true, [10,18]))
+mnist.add_tensor(new Tensor(true))
+
+mnist.add_tensor(new Tensor(true))
+mnist.add_tensor(new Tensor(true, [10,10]))
+mnist.add_tensor(new Tensor(true))
+
+mnist.add_tensor(new Tensor(true))
+
+
+
+
+op = new Operator(5)
+op.inputs = [0,1]
+op.outputs = [2]
+mnist.add_operator(op)
+
+op = new Operator(14)
+op.inputs = [2]
+op.outputs = [3]
+mnist.add_operator(op)
+
+
+op = new Operator(5)
+op.inputs = [3,4]
+op.outputs = [5]
+mnist.add_operator(op)
+
+op = new Operator(14)
+op.inputs = [5]
+op.outputs = [6]
+mnist.add_operator(op)
+
+
+op = new Operator(5)
+op.inputs = [6,7]
+op.outputs = [8]
+mnist.add_operator(op)
+
+op = new Operator(7)
+op.inputs = [8]
+op.outputs = [9]
+mnist.add_operator(op)
+
+
+
+
+mnist.input_tensors = [0]
+mnist.param_tensors = [1,4,7]
+mnist.output_tensors = [9]
+
+
+
+
+
+
+
+
+console.log(mnist.to_string())
+
+
+console.log("FUNCTION CODE\n")
+console.log(create_function_code(mnist))
+console.log("\n\n\n")
+
+
+
+
+mnist.add_tensor(new Tensor(true, [10]))
+mnist.add_tensor(new Tensor(true))
+
+op = new Operator(11)
+op.inputs = [9,10]
+op.outputs = [11]
+mnist.add_operator(op)
+
+mnist.loss = 11
+mnist.truth_tensors = [10]
+
+console.log(create_derivative_code(mnist))
