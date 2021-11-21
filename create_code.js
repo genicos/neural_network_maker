@@ -333,6 +333,28 @@ function create_function_code(network){
             code += "    }\n"
         }
 
+        if(this_op.func == 12 || this_op.func == 14){
+            code += "    // Operator "+ ordered_operators[i] + ", ReLU\n"
+            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
+            code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i];\n"
+            code += "        }else{\n"
+            code += "            t"+this_op.outputs[0]+"[i] = 0;\n"
+            code += "        }\n"
+            code += "    }\n"
+        }
+
+        if(this_op.func == 13){
+            code += "    // Operator "+ ordered_operators[i] + ", Leaky ReLU\n"
+            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "        if(t"+this_op.inputs[0]+"[i] >= 0){\n"
+            code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i];\n"
+            code += "        }else{\n"
+            code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * 0.1;\n"
+            code += "        }\n"
+            code += "    }\n"
+        }
+
 
     }
     code += "}\n"
@@ -565,6 +587,7 @@ function create_derivative_code(network){
         if(this_op.func == 5){
             code += "    // Operator "+ ordered_operators[i] + ", fully connected layer\n"
             if(this_handle.evaluate){
+                code += "    // evaluation\n"
                 code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.outputs[0]].size + "; i++){\n"
                 code += "        t"+this_op.outputs[0] +"[i] = 0;\n"
                 code += "        for(uint32_t j = 0; j < " + network.tensors[this_op.inputs[0]].size + "; j++){\n"
@@ -594,6 +617,55 @@ function create_derivative_code(network){
                 }
             }
         }
+
+        if(this_op.func == 12){
+            code += "    // Operator "+ ordered_operators[i] + ", ReLU\n"
+            if(this_handle.evaluate){
+                code += "    // evaluation\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
+                code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i];\n"
+                code += "        }else{\n"
+                code += "            t"+this_op.outputs[0]+"[i] = 0;\n"
+                code += "        }\n"
+                code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                code += "    for(uint32_t i = 0; i < "+input_size+"; i++){\n"
+                code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
+                code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 1;\n"
+                code += "        }else{\n"
+                code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 0;\n"
+                code += "        }\n"
+                code += "    }\n"
+            }
+        }
+
+        if(this_op.func == 13 || this_op.func == 14){
+            code += "    // Operator "+ ordered_operators[i] + ", Leaky ReLU\n"
+            if(this_handle.evaluate){
+                code += "    // evaluation\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
+                code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i];\n"
+                code += "        }else{\n"
+                code += "            t"+this_op.outputs[0]+"[i] = t"+this_op.inputs[0]+"[i] * 0.1;\n"
+                code += "        }\n"
+                code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                code += "    for(uint32_t i = 0; i < "+input_size+"; i++){\n"
+                code += "        if(t"+this_op.inputs[0]+"[i] > 0){\n"
+                code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 1;\n"
+                code += "        }else{\n"
+                code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i] = 0.1;\n"
+                code += "        }\n"
+                code += "    }\n"
+            }
+        }
+
     }
 
 
