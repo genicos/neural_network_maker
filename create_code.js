@@ -103,6 +103,8 @@ function create_function_code(network){
 
     }
 
+    var prepared_for_softmax = false;
+
     for(let i = 0; i < ordered_operators.length;i++){
         var this_op = network.operators[ordered_operators[i]]
         code += "    \n"
@@ -151,15 +153,52 @@ function create_function_code(network){
             code += "    }\n"
         }
 
+        /*
+        float tc1 = 0.69314718056;
+        float tc2 = 0.24022650695;
+        float tc3 = 0.11100821733;
+        float lge = 1.44269504089;
+        float two = 2.0;
+        
+        int32_t a_int;
+        float alge = ta*lge;
+        if(a >= 0){
+            a_int = (int32_t)a;
+        }else{
+            a_int = -(int32_t)(-a);
+        }
+        float a_frac = a - a_int;
+        float a_frac2 = a_frac*a_frac;
+        int32_t paa = (*(int32_t *)&two + 0x800000 * (a_int-1));
+        float pa = (*(float *)&paa)*(1 + tc1*a_frac + tc2*a_frac2);
+        */
         
         if(this_op.func == 7){
             code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
             code += "    float temp"+ordered_operators[i]+"_powersum = 0;\n"
+            if(!prepared_for_softmax){
+                code += "    float two_to_the_x_taylor_const_1 = 0.69314718056;\n"
+                code += "    float two_to_the_x_taylor_const_2 = 0.24022650695;\n"
+                code += "    float log_base_2_of_e = 1.44269504089;\n"
+                code += "    float two = 2.0;\n"
+                prepared_for_softmax = true;
+            }
             code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "        temp"+ordered_operators[i]+"_powersum += 2 << t"+this_op.inputs[0]+"[i];\n"
+            code += "        int32_t x_int;\n"
+            code += "        float x_lge = log_base_2_of_e*"+"t"+this_op.inputs[0]+"[i];\n"
+            code += "        if(x_lge >= 0){\n"
+            code += "            x_int = (int32_t)x_lge;\n"
+            code += "        }else{\n"
+            code += "            x_int = -(int32_t)-x_lge;\n"
+            code += "        }\n"
+            code += "        float x_frac = x_lge - x_int;\n"
+            code += "        float x_frac_2 = x_frac*x_frac;\n"
+            code += "        int32_t exponent_piece = (*(int32_t *)&two + 0x800000 * (x_int-1));\n"
+            code += "        t"+this_op.outputs[0]+"[i] = (*(float *)&exponent_piece)*(1 + two_to_the_x_taylor_const_1*x_frac + two_to_the_x_taylor_const_2*x_frac_2);\n"
+            code += "        temp"+ordered_operators[i]+"_powersum += t"+this_op.outputs[0]+"[i];\n"
             code += "    }\n"
             code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "        t"+this_op.outputs[0]+"[i]  = (2 << t"+this_op.inputs[0]+"[i]) / temp"+ordered_operators[i]+"_powersum;\n"
+            code += "        t"+this_op.outputs[0]+"[i]  = t"+this_op.outputs[0]+"[i] / temp"+ordered_operators[i]+"_powersum;\n"
             code += "    }\n"
         }
 
@@ -398,6 +437,7 @@ class operator_handle{
 
 
 
+//STANDARD: for jacobian, larger dimension is output
 
 //This code currently assumes one ouput per operator, which may change in the future
 function create_derivative_code(network){
@@ -473,6 +513,12 @@ function create_derivative_code(network){
                     var evaluate = (network.loss != network.operators[i].outputs[0])
                     operator_handles[i].partials = partials
                     operator_handles[i].evaluate = evaluate
+
+                    //TODO, for now, softmax always evaluates
+                    if(network.operators[i].func == 7){
+                        operator_handles[i].evaluate = true
+                    }
+
                     operator_handles[i].out_partial = out_partial
 
 
@@ -547,7 +593,8 @@ function create_derivative_code(network){
             input_1_size = network.tensors[this_op.inputs[0]].size
         }
         code += "    \n"
-
+        
+        ////PROBLEM: this is also wrong, not a jacobian!!!!!
         if(this_op.func == 2){
             code += "    // Operator "+ ordered_operators[i] + ", tensor addition\n"
             if(this_handle.evaluate){
@@ -624,6 +671,75 @@ function create_derivative_code(network){
             }
         }
 
+        /*
+        code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
+            code += "    float temp"+ordered_operators[i]+"_powersum = 0;\n"
+            if(!prepared_for_softmax){
+                code += "    float two_to_the_x_taylor_const_1 = 0.69314718056;\n"
+                code += "    float two_to_the_x_taylor_const_2 = 0.24022650695;\n"
+                code += "    float log_base_2_of_e = 1.44269504089;\n"
+                code += "    float two = 2.0;\n"
+                prepared_for_softmax = true;
+            }
+            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "        int32_t x_int;\n"
+            code += "        float x_lge = log_base_2_of_e*"+"t"+this_op.inputs[0]+"[i];\n"
+            code += "        if(x_lge >= 0){\n"
+            code += "            x_int = (int32_t)x_lge;\n"
+            code += "        }else{\n"
+            code += "            x_int = -(int32_t)-x_lge;\n"
+            code += "        }\n"
+            code += "        float x_frac = x_lge - x_int;\n"
+            code += "        float x_frac_2 = x_frac*x_frac;\n"
+            code += "        int32_t exponent_piece = (*(int32_t *)&two + 0x800000 * (x_int-1));\n"
+            code += "        t"+this_op.outputs[0]+"[i] = (*(float *)&exponent_piece)*(1 + two_to_the_x_taylor_const_1*x_frac + two_to_the_x_taylor_const_2*x_frac_2);\n"
+            code += "        temp"+ordered_operators[i]+"_powersum += t"+this_op.outputs[0]+"[i];\n"
+            code += "    }\n"
+            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+            code += "        t"+this_op.outputs[0]+"[i]  = t"+this_op.outputs[0]+"[i] / temp"+ordered_operators[i]+"_powersum;\n"
+            code += "    }\n"
+        */
+        if(this_op.func == 7){
+            code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
+            if(this_handle.evaluate){
+                code += "    // evaluation\n"
+                code += "    float temp"+ordered_operators[i]+"_powersum = 0;\n"
+                if(!prepared_for_softmax){
+                    code += "    float two_to_the_x_taylor_const_1 = 0.69314718056;\n"
+                    code += "    float two_to_the_x_taylor_const_2 = 0.24022650695;\n"
+                    code += "    float log_base_2_of_e = 1.44269504089;\n"
+                    code += "    float two = 2.0;\n"
+                    prepared_for_softmax = true;
+                }
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                code += "        int32_t x_int;\n"
+                code += "        float x_lge = log_base_2_of_e*"+"t"+this_op.inputs[0]+"[i];\n"
+                code += "        if(x_lge >= 0){\n"
+                code += "            x_int = (int32_t)x_lge;\n"
+                code += "        }else{\n"
+                code += "            x_int = -(int32_t)-x_lge;\n"
+                code += "        }\n"
+                code += "        float x_frac = x_lge - x_int;\n"
+                code += "        float x_frac_2 = x_frac*x_frac;\n"
+                code += "        int32_t exponent_piece = (*(int32_t *)&two + 0x800000 * (x_int-1));\n"
+                code += "        t"+this_op.outputs[0]+"[i] = (*(float *)&exponent_piece)*(1 + two_to_the_x_taylor_const_1*x_frac + two_to_the_x_taylor_const_2*x_frac_2);\n"
+                code += "        temp"+ordered_operators[i]+"_powersum += t"+this_op.outputs[0]+"[i];\n"
+                code += "    }\n"
+                code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
+                code += "        t"+this_op.outputs[0]+"[i]  = t"+this_op.outputs[0]+"[i] / temp"+ordered_operators[i]+"_powersum;\n"
+                code += "    }\n"
+            }
+            if(this_handle.out_partial){
+                code += "    // partial derivative\n"
+                code += "    for(uint32_t i = 0; i < "+output_size+"; i++){\n"
+                code += "        for(uint32_t j = 0; j < "+output_size+"; j++){\n"
+                code += "            d"+this_op.outputs[0]+"d"+this_op.inputs[0]+"[i*"+output_size+" + j] = t"+this_op.outputs[0]+"[i]*((i==j) - t"+this_op.outputs[0]+"[j]);\n"
+                code += "        }\n"
+                code += "    }\n"
+            }
+        }
+
+        //PROBLEM: this is wrong, not a jacobian
         if(this_op.func == 12){
             code += "    // Operator "+ ordered_operators[i] + ", ReLU\n"
             if(this_handle.evaluate){
@@ -648,6 +764,7 @@ function create_derivative_code(network){
             }
         }
 
+        //PROBLEM: this is wrong, not a jacobian
         if(this_op.func == 13 || this_op.func == 14){
             code += "    // Operator "+ ordered_operators[i] + ", Leaky ReLU\n"
             if(this_handle.evaluate){
