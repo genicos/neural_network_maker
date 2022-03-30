@@ -54,7 +54,7 @@ networks[0].add_tensor(new Tensor(true))
 networks[0].tensors[4].x = 300
 networks[0].tensors[4].y = 200
 
-networks[0].add_tensor(new Tensor(true))
+networks[0].add_tensor(new Tensor(false))
 networks[0].tensors[5].x = 350
 networks[0].tensors[5].y = 150
 
@@ -68,10 +68,38 @@ op1.outputs = [3]
 op1.func = 2
 networks[0].add_operator(op1)
 
+
+
 networks[0].add_tensor(new Tensor(true))
-networks[0].tensors[7].x = 400
-networks[0].tensors[7].y = 400
-networks[0].tensors[7].scalar = true
+networks[0].tensors[7].x = 500
+networks[0].tensors[7].y = 200
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[8].x = 400
+networks[0].tensors[8].y = 200
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[9].x = 450
+networks[0].tensors[9].y = 150
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[10].x = 450
+networks[0].tensors[10].y = 350
+
+
+let op2 = new Operator()
+op2.inputs = [8, 9]
+op2.outputs = [7]
+op2.func = 5
+networks[0].add_operator(op2)
+
+
+
+
+networks[0].add_tensor(new Tensor(true))
+networks[0].tensors[11].x = 400
+networks[0].tensors[11].y = 400
+networks[0].tensors[11].scalar = true
 
 function init() {
     last_frame = Date.now()

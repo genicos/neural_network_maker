@@ -1,4 +1,4 @@
-function create_function_code(network){
+function create_function_code_c(network){
 
     network.expand()
 
@@ -152,26 +152,7 @@ function create_function_code(network){
             code += "        t"+this_op.outputs[0]+treatment+" += t"+this_op.inputs[0]+"[i];\n"
             code += "    }\n"
         }
-
-        /*
-        float tc1 = 0.69314718056;
-        float tc2 = 0.24022650695;
-        float tc3 = 0.11100821733;
-        float lge = 1.44269504089;
-        float two = 2.0;
         
-        int32_t a_int;
-        float alge = ta*lge;
-        if(a >= 0){
-            a_int = (int32_t)a;
-        }else{
-            a_int = -(int32_t)(-a);
-        }
-        float a_frac = a - a_int;
-        float a_frac2 = a_frac*a_frac;
-        int32_t paa = (*(int32_t *)&two + 0x800000 * (a_int-1));
-        float pa = (*(float *)&paa)*(1 + tc1*a_frac + tc2*a_frac2);
-        */
         
         if(this_op.func == 7){
             code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
@@ -440,7 +421,7 @@ class operator_handle{
 //STANDARD: for jacobian, larger dimension is output
 
 //This code currently assumes one ouput per operator, which may change in the future
-function create_derivative_code(network){
+function create_derivative_code_c(network){
 
     network.expand()
 
@@ -583,6 +564,8 @@ function create_derivative_code(network){
         }
     }
 
+    var prepared_for_softmax = false;
+
     for(let i = 0; i < ordered_operators.length;i++){
         var this_op = network.operators[ordered_operators[i]]
         var this_handle = operator_handles[ordered_operators[i]]
@@ -671,34 +654,7 @@ function create_derivative_code(network){
             }
         }
 
-        /*
-        code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
-            code += "    float temp"+ordered_operators[i]+"_powersum = 0;\n"
-            if(!prepared_for_softmax){
-                code += "    float two_to_the_x_taylor_const_1 = 0.69314718056;\n"
-                code += "    float two_to_the_x_taylor_const_2 = 0.24022650695;\n"
-                code += "    float log_base_2_of_e = 1.44269504089;\n"
-                code += "    float two = 2.0;\n"
-                prepared_for_softmax = true;
-            }
-            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "        int32_t x_int;\n"
-            code += "        float x_lge = log_base_2_of_e*"+"t"+this_op.inputs[0]+"[i];\n"
-            code += "        if(x_lge >= 0){\n"
-            code += "            x_int = (int32_t)x_lge;\n"
-            code += "        }else{\n"
-            code += "            x_int = -(int32_t)-x_lge;\n"
-            code += "        }\n"
-            code += "        float x_frac = x_lge - x_int;\n"
-            code += "        float x_frac_2 = x_frac*x_frac;\n"
-            code += "        int32_t exponent_piece = (*(int32_t *)&two + 0x800000 * (x_int-1));\n"
-            code += "        t"+this_op.outputs[0]+"[i] = (*(float *)&exponent_piece)*(1 + two_to_the_x_taylor_const_1*x_frac + two_to_the_x_taylor_const_2*x_frac_2);\n"
-            code += "        temp"+ordered_operators[i]+"_powersum += t"+this_op.outputs[0]+"[i];\n"
-            code += "    }\n"
-            code += "    for(uint32_t i = 0; i < " + network.tensors[this_op.inputs[0]].size + "; i++){\n"
-            code += "        t"+this_op.outputs[0]+"[i]  = t"+this_op.outputs[0]+"[i] / temp"+ordered_operators[i]+"_powersum;\n"
-            code += "    }\n"
-        */
+        
         if(this_op.func == 7){
             code += "    // Operator "+ ordered_operators[i] + ", softmax\n"
             if(this_handle.evaluate){
@@ -1035,4 +991,82 @@ function create_derivative_code(network){
 
     code += "}\n"
     return code
+}
+
+
+
+
+
+function create_function_code_tensor_flow(network){
+
+    network.expand()
+
+    
+    code = "# Generated code for tensor flow "
+
+
+    //First, we determine an order of operators that causes no dependency hazards
+    var ordered_operators = []
+    var computed_tensors = network.input_tensors.concat(network.param_tensors)
+
+
+    while(computed_tensors.length != 0){
+        var no_computation = true
+
+        //find operators which can now be computed
+        for(let i = 0; i < network.operators.length; i++){
+
+            //only check operators we have not already computed
+            if(!ordered_operators.includes(i)){
+                var all_inputs_are_computed = true
+
+                //check if all inputs have been computed
+                for(let k = 0; k < network.operators[i].inputs.length; k++){
+                    if(!computed_tensors.includes(network.operators[i].inputs[k])){
+                        all_inputs_are_computed = false
+                    }
+                }
+                console.log("i:"+i)
+                //if all inputs have been computed, then the operator may be computed
+                // and all of the operators outputs can be computed
+                if(all_inputs_are_computed){
+                    no_computation = false
+
+                    ordered_operators.push(i)
+
+                    
+                    out_forms = function_table[network.operators[i].func].calc_form(network.operators[i].inputs, network)
+                    
+                    for(let k = 0; k < network.operators[i].outputs.length; k++){
+                        computed_tensors.push(network.operators[i].outputs[k])
+
+
+                        network.tensors[network.operators[i].outputs[k]].form = out_forms[k]
+                    }
+                }
+            }
+        }
+
+        if(computed_tensors.length == network.tensors.length){
+            
+            break
+        }else if(no_computation){
+            //If we can perform no more computations, and we have not computed every tensor
+            // then the network is ill-formed
+            return false;
+        }
+    }
+
+
+    //At this point, ordered_operators is a list of the opertions of the network
+    //ordered in a way that causes no dependency hazards
+
+
+    for(let i = 0; i < ordered_operators.length;i++){
+        var this_op = network.operators[ordered_operators[i]]
+        if(this_op.func == 2){
+            code += "Tensor flow code that adds two tensors\n"
+        }
+    }
+
 }

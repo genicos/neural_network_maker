@@ -158,7 +158,7 @@ fulladder.output_tensors = [6]
 
 console.log(fulladder.to_string())
 
-console.log(create_function_code(fulladder))
+console.log(create_function_code_c(fulladder))
 
 
 console.log("\n\nCONV2CLASSIFYER2\n\n")
@@ -170,7 +170,7 @@ conv2classifyer2.tensors[4].form = [576,18]
 conv2classifyer2.tensors[5].form = [18,10]
 
 console.log(conv2classifyer2.to_string())
-console.log(create_function_code(conv2classifyer2))
+console.log(create_function_code_c(conv2classifyer2))
 
 
 
@@ -229,7 +229,7 @@ derivativer.param_tensors = [5,6,7]
 derivativer.truth_tensors = [0]
 derivativer.input_tensors = [9,10]
 
-derivative_string = create_derivative_code(derivativer)
+derivative_string = create_derivative_code_c(derivativer)
 
 
 console.log(derivativer.to_string())
@@ -319,7 +319,7 @@ console.log(mnist.to_string())
 
 
 console.log("FUNCTION CODE\n")
-console.log(create_function_code(mnist))
+console.log(create_function_code_c(mnist))
 console.log("\n\n\n")
 
 
@@ -336,4 +336,4 @@ mnist.add_operator(op)
 mnist.loss = 11
 mnist.truth_tensors = [10]
 
-console.log(create_derivative_code(mnist))
+console.log(create_derivative_code_c(mnist))
